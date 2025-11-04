@@ -1,0 +1,616 @@
+<!-- patient_dashboard.html (updated with ambulance sections) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - Hospital Resources Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f8ff;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #41b883 0%, #329268 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-content p {
+            opacity: 0.9;
+        }
+        
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .patient-info-card {
+            border-top: 5px solid #41b883;
+        }
+        
+        .update-form-card {
+            border-top: 5px solid #2c7fb8;
+        }
+        
+        .hospitals-card {
+            border-top: 5px solid #ff9f43;
+            grid-column: 1 / -1;
+        }
+        
+        .notifications-card {
+            border-top: 5px solid #e74c3c;
+            grid-column: 1 / -1;
+        }
+        
+        .ambulance-notifications-card {
+            border-top: 5px solid #e74c3c;
+            grid-column: 1 / -1;
+        }
+        
+        .pending-card {
+            border-top: 5px solid #f39c12;
+            grid-column: 1 / -1;
+        }
+        
+        .ambulance-pending-card {
+            border-top: 5px solid #f39c12;
+            grid-column: 1 / -1;
+        }
+        
+        .history-card {
+            border-top: 5px solid #2c7fb8;
+            grid-column: 1 / -1;
+        }
+        
+        .ambulance-history-card {
+            border-top: 5px solid #2c7fb8;
+            grid-column: 1 / -1;
+        }
+        
+        h2 {
+            color: #41b883;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .update-form-card h2 {
+            color: #2c7fb8;
+        }
+        
+        .hospitals-card h2 {
+            color: #ff9f43;
+        }
+        
+        .notifications-card h2, .ambulance-notifications-card h2 {
+            color: #e74c3c;
+        }
+        
+        .pending-card h2, .ambulance-pending-card h2 {
+            color: #f39c12;
+        }
+        
+        .history-card h2, .ambulance-history-card h2 {
+            color: #2c7fb8;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert ul {
+            list-style-type: none;
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-active {
+            background-color: #e8f5e9;
+            color: #41b883;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #2c7fb8;
+            box-shadow: 0 0 0 2px rgba(44, 127, 184, 0.2);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        .update-btn {
+            background-color: #2c7fb8;
+            color: white;
+            flex: 1;
+        }
+        
+        .update-btn:hover {
+            background-color: #1d5f8a;
+        }
+        
+        .hospitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .hospital-item {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #ff9f43;
+        }
+        
+        .hospital-item:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hospital-name {
+            font-weight: 600;
+            color: #ff9f43;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .hospital-details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .view-hospital-btn {
+            background-color: #ff9f43;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .view-hospital-btn:hover {
+            background-color: #e67e22;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+        
+        .notification-list, .pending-list, .history-list, .ambulance-notification-list, .ambulance-pending-list, .ambulance-history-list {
+            list-style-type: none;
+        }
+        
+        .notification-list li, .pending-list li, .history-list li, .ambulance-notification-list li, .ambulance-pending-list li, .ambulance-history-list li {
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .pending-list li, .ambulance-pending-list li {
+            border-left-color: #f39c12;
+        }
+        
+        .history-list li, .ambulance-history-list li {
+            border-left-color: #2c7fb8;
+        }
+        
+        .pay-btn, .download-btn, .location-btn {
+            background-color: #41b883;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+        
+        .location-btn {
+            background-color: #2c7fb8;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .hospitals-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-user-injured"></i> Patient Dashboard</h1>
+                <p>Welcome to your personal health portal</p>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </header>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="dashboard-content">
+            <div class="card patient-info-card">
+                <h2><i class="fas fa-id-card"></i> Patient Information</h2>
+                <div class="info-item">
+                    <span class="info-label">Full Name</span>
+                    <span class="info-value">{{ patient.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mobile</span>
+                    <span class="info-value">{{ patient.mobile }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ patient.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Patient Information</span>
+                    <span class="info-value">{{ patient.info or 'No additional information' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Account Status</span>
+                    <span class="info-value">
+                        <span class="status-indicator status-active">
+                            <i class="fas fa-circle"></i> Active
+                        </span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card update-form-card">
+                <h2><i class="fas fa-edit"></i> Update Information</h2>
+                <form method="POST">
+                    <input type="hidden" name="edit" value="1">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" value="{{ patient.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mobile">Mobile</label>
+                        <input type="text" id="mobile" name="mobile" value="{{ patient.mobile }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="{{ patient.email }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="info">Patient Information</label>
+                        <textarea id="info" name="info">{{ patient.info or '' }}</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn update-btn">Update Information</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card hospitals-card">
+                <h2><i class="fas fa-hospital"></i> Available Hospitals</h2>
+                
+                {% if hospitals %}
+                    <div class="hospitals-grid">
+                        {% for hospital in hospitals %}
+                            <div class="hospital-item">
+                                <div class="hospital-name">
+                                    <i class="fas fa-hospital"></i> {{ hospital.name }}
+                                </div>
+                                <div class="hospital-details">
+                                    {{ hospital.email }} | {{ hospital.mobile }}
+                                </div>
+                                <a href="{{ url_for('patient_hospital', hospital_id=hospital.id) }}" class="view-hospital-btn">
+                                    <i class="fas fa-external-link-alt"></i> View Hospital
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-hospital"></i>
+                        <h3>No Hospitals Available</h3>
+                        <p>There are currently no hospitals registered in the system.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card notifications-card">
+                <h2><i class="fas fa-bell"></i> Bed Notifications</h2>
+                {% if accepted_unpaid %}
+                    <ul class="notification-list">
+                        {% for booking in accepted_unpaid %}
+                            <li>
+                                Your request for Bed {{ booking.bed.bed_number }} in Room {{ booking.bed.room.name }} is accepted. Please pay the bill.
+                                <a href="{{ url_for('patient_bill', booking_id=booking.id) }}" class="pay-btn" style="margin-top: 10px; display: inline-block;">View Bill and Pay</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No bed notifications.</p>
+                {% endif %}
+            </div>
+
+            <div class="card ambulance-notifications-card">
+                <h2><i class="fas fa-bell"></i> Ambulance Notifications</h2>
+                {% if ambulance_notifications %}
+                    <ul class="ambulance-notification-list">
+                        {% for booking in ambulance_notifications %}
+                            <li>
+                                Your ambulance booking ({{ booking.vehicle.name }} - {{ booking.use_type }}) is accepted. 
+                                <a href="{{ url_for('patient_ambulance_bill', booking_id=booking.id) }}" class="pay-btn">Pay Bill</a>
+                                {% if booking.live_location_link %}
+                                    <a href="{{ booking.live_location_link }}" target="_blank" class="location-btn">Get Live Location</a>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No ambulance notifications.</p>
+                {% endif %}
+            </div>
+
+            <div class="card pending-card">
+                <h2><i class="fas fa-clock"></i> Bed Pending Requests</h2>
+                {% if pending_requests %}
+                    <ul class="pending-list">
+                        {% for booking in pending_requests %}
+                            <li>Pending request for Bed {{ booking.bed.bed_number }} in Room {{ booking.bed.room.name }} (Created: {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }})</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No pending bed requests.</p>
+                {% endif %}
+            </div>
+
+            <div class="card ambulance-pending-card">
+                <h2><i class="fas fa-clock"></i> Ambulance Pending Requests</h2>
+                {% if ambulance_pending %}
+                    <ul class="ambulance-pending-list">
+                        {% for booking in ambulance_pending %}
+                            <li>Pending request for Ambulance {{ booking.vehicle.name }} ({{ booking.use_type }}) (Created: {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }})</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No pending ambulance requests.</p>
+                {% endif %}
+            </div>
+
+            <div class="card history-card">
+                <h2><i class="fas fa-history"></i> Bed Booking History</h2>
+                {% if history_bookings %}
+                    <ul class="history-list">
+                        {% for booking in history_bookings %}
+                            <li>
+                                Booking for Bed {{ booking.bed.bed_number }} in Room {{ booking.bed.room.name }} - Status: {{ booking.status }}
+                                {% if booking.status == 'paid' %}
+                                    <a href="{{ url_for('download_bill', booking_id=booking.id) }}" class="download-btn">Download Bill</a>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No bed booking history.</p>
+                {% endif %}
+            </div>
+
+            <div class="card ambulance-history-card">
+                <h2><i class="fas fa-history"></i> Ambulance History</h2>
+                {% if ambulance_history %}
+                    <ul class="ambulance-history-list">
+                        {% for booking in ambulance_history %}
+                            <li>
+                                Booking for Ambulance {{ booking.vehicle.name }} - Status: {{ booking.status }}
+                                <a href="{{ url_for('patient_download_ambulance_bill', booking_id=booking.id) }}" class="download-btn">Download Bill</a>
+                                {% if booking.live_location_link %}
+                                    <a href="{{ booking.live_location_link }}" target="_blank" class="location-btn">Get Location</a>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No ambulance history.</p>
+                {% endif %}
+            </div>
+
+            <div class="card history-card">
+                <h2><i class="fas fa-history"></i> Appointment History</h2>
+                {% if history_appointments %}
+                    <ul class="history-list">
+                        {% for appointment in history_appointments %}
+                            <li>
+                                Appointment with Dr. {{ appointment.doctor.name }} on {{ appointment.appointment_date }} at {{ appointment.time_slot.start_time }} - {{ appointment.time_slot.end_time }} - Status: {{ appointment.status }}
+                                {% if appointment.status == 'paid' %}
+                                    <a href="{{ url_for('download_appointment_bill', appointment_id=appointment.id) }}" class="download-btn">Download Bill</a>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No appointment history.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Hospital Resources Management System. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
