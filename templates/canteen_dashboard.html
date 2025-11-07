@@ -1,3 +1,4 @@
+<!-- canteen_dashboard.html (Full updated code with new changes) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+    
         body {
             background-color: #f0f8ff;
             color: #333;
@@ -20,14 +21,14 @@
             display: flex;
             flex-direction: column;
         }
-        
+    
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             flex: 1;
         }
-        
+    
         header {
             display: flex;
             justify-content: space-between;
@@ -39,7 +40,7 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+    
         .header-content h1 {
             font-size: 2rem;
             margin-bottom: 5px;
@@ -47,11 +48,11 @@
             align-items: center;
             gap: 10px;
         }
-        
+    
         .header-content p {
             opacity: 0.9;
         }
-        
+    
         .logout-btn {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
@@ -64,38 +65,38 @@
             align-items: center;
             gap: 8px;
         }
-        
+    
         .logout-btn:hover {
             background-color: rgba(255, 255, 255, 0.3);
         }
-        
+    
         .dashboard-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
-        
+    
         .card {
             background-color: white;
             border-radius: 10px;
             padding: 25px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+    
         .canteen-info-card {
             border-top: 5px solid #e67e22;
         }
-        
+    
         .update-form-card {
             border-top: 5px solid #41b883;
         }
-        
+    
         .quick-actions-card {
             border-top: 5px solid #ff9f43;
             grid-column: 1 / -1;
         }
-        
+    
         h2 {
             color: #e67e22;
             margin-bottom: 20px;
@@ -104,15 +105,15 @@
             align-items: center;
             gap: 10px;
         }
-        
+    
         .update-form-card h2 {
             color: #41b883;
         }
-        
+    
         .quick-actions-card h2 {
             color: #ff9f43;
         }
-        
+    
         .alert {
             padding: 15px;
             border-radius: 5px;
@@ -121,28 +122,28 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        
+    
         .alert ul {
             list-style-type: none;
         }
-        
+    
         .info-item {
             margin-bottom: 15px;
             padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
-        
+    
         .info-label {
             font-weight: 600;
             color: #555;
             display: block;
             margin-bottom: 5px;
         }
-        
+    
         .info-value {
             color: #333;
         }
-        
+    
         .status-indicator {
             display: inline-flex;
             align-items: center;
@@ -153,17 +154,17 @@
             font-weight: 600;
             margin-left: 10px;
         }
-        
+    
         .status-open {
             background-color: #e8f5e9;
             color: #41b883;
         }
-        
+    
         .status-closed {
             background-color: #f5f5f5;
             color: #7f8c8d;
         }
-        
+    
         .hours-badge {
             display: inline-flex;
             align-items: center;
@@ -176,18 +177,18 @@
             color: #2c7fb8;
             margin-left: 10px;
         }
-        
+    
         .form-group {
             margin-bottom: 20px;
         }
-        
+    
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: #555;
         }
-        
+    
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -195,24 +196,24 @@
             border-radius: 5px;
             font-size: 1rem;
         }
-        
+    
         textarea {
             min-height: 100px;
             resize: vertical;
         }
-        
+    
         input:focus, textarea:focus {
             outline: none;
             border-color: #41b883;
             box-shadow: 0 0 0 2px rgba(65, 184, 131, 0.2);
         }
-        
+    
         .btn-group {
             display: flex;
             gap: 10px;
             margin-top: 20px;
         }
-        
+    
         .btn {
             padding: 12px 20px;
             border: none;
@@ -225,23 +226,23 @@
             text-align: center;
             display: inline-block;
         }
-        
+    
         .update-btn {
             background-color: #41b883;
             color: white;
             flex: 1;
         }
-        
+    
         .update-btn:hover {
             background-color: #329268;
         }
-        
+    
         .actions-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
         }
-        
+    
         .action-btn {
             background-color: #fef0e6;
             color: #e67e22;
@@ -257,19 +258,19 @@
             justify-content: center;
             min-height: 100px;
         }
-        
+    
         .action-btn:hover {
             background-color: #e67e22;
             color: white;
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        
+    
         .action-btn i {
             font-size: 1.5rem;
             margin-bottom: 10px;
         }
-        
+    
         .hours-info {
             background-color: #fef9f0;
             border: 2px solid #e67e22;
@@ -278,7 +279,7 @@
             margin-top: 20px;
             text-align: center;
         }
-        
+    
         .hours-info h3 {
             color: #e67e22;
             margin-bottom: 10px;
@@ -287,7 +288,7 @@
             justify-content: center;
             gap: 10px;
         }
-        
+    
         footer {
             text-align: center;
             padding: 20px;
@@ -295,27 +296,42 @@
             font-size: 0.9rem;
             margin-top: 30px;
         }
-        
+    
         @media (max-width: 768px) {
             .dashboard-content {
                 grid-template-columns: 1fr;
             }
-            
+        
             header {
                 flex-direction: column;
                 text-align: center;
                 gap: 15px;
             }
-            
+        
             .actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        
+    
         @media (max-width: 480px) {
             .actions-grid {
                 grid-template-columns: 1fr;
             }
+        }
+        .preparing-orders {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .preparing-orders h3 {
+            margin-bottom: 10px;
+        }
+        .preparing-orders ul {
+            list-style: none;
+        }
+        .preparing-orders li {
+            margin-bottom: 5px;
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -331,7 +347,7 @@
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </header>
-        
+    
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <div class="alert">
@@ -343,7 +359,7 @@
                 </div>
             {% endif %}
         {% endwith %}
-        
+    
         <div class="dashboard-content">
             <div class="card canteen-info-card">
                 <h2><i class="fas fa-id-card"></i> Canteen Information</h2>
@@ -381,7 +397,7 @@
                     </span>
                 </div>
             </div>
-            
+        
             <div class="card update-form-card">
                 <h2><i class="fas fa-edit"></i> Update Information</h2>
                 <form method="POST">
@@ -407,44 +423,49 @@
                     </div>
                 </form>
             </div>
-            
+        
             <div class="card quick-actions-card">
                 <h2><i class="fas fa-tasks"></i> Quick Actions</h2>
                 <div class="actions-grid">
-                    <a href="#" class="action-btn">
+                    <a href="{{ url_for('canteen_menu_management') }}" class="action-btn">
                         <i class="fas fa-utensils"></i>
                         <span>Menu Management</span>
                     </a>
-                    <a href="#" class="action-btn">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span>Inventory</span>
-                    </a>
-                    <a href="#" class="action-btn">
+                    <a href="{{ url_for('canteen_orders') }}" class="action-btn">
                         <i class="fas fa-receipt"></i>
                         <span>Orders</span>
                     </a>
-                    <a href="#" class="action-btn">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Sales Report</span>
-                    </a>
-                    <a href="#" class="action-btn">
-                        <i class="fas fa-users"></i>
-                        <span>Staff</span>
-                    </a>
-                    <a href="#" class="action-btn">
-                        <i class="fas fa-bell"></i>
-                        <span>Notifications</span>
+                  <!-- Replace the "Update Status" link in canteen_dashboard.html -->
+<a href="{{ url_for('canteen_update_statuses') }}" class="action-btn">
+    <i class="fas fa-sync"></i>
+    <span>Update Status</span>
+</a>
+                    <a href="{{ url_for('canteen_manage_reviews') }}" class="action-btn">
+                        <i class="fas fa-star"></i>
+                        <span>Manage Reviews</span>
                     </a>
                 </div>
-                
+            
                 <div class="hours-info">
                     <h3><i class="fas fa-clock"></i> Today's Special</h3>
                     <p><strong>Vegetable Biryani</strong> with Raita and Salad</p>
                     <p><small>Served from 12:00 PM - 2:00 PM</small></p>
                 </div>
+                <div class="preparing-orders">
+                    <h3>Preparing Orders</h3>
+                    {% if preparing_orders %}
+                        <ul>
+                            {% for order in preparing_orders %}
+                                <li>Order #{{ order.id }} - Status: {{ order.status }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No preparing orders</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        
+    
         <footer>
             <p>© 2023 Hospital Resources Management System. All rights reserved.</p>
         </footer>

@@ -1,4 +1,4 @@
-<!-- ambulance_bookings.html (updated) -->
+<!-- ambulance_bookings.html (Full updated code) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +12,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+       
         body {
             background-color: #f0f8ff;
             color: #333;
@@ -21,14 +21,14 @@
             display: flex;
             flex-direction: column;
         }
-        
+       
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             flex: 1;
         }
-        
+       
         header {
             display: flex;
             justify-content: space-between;
@@ -40,7 +40,7 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+       
         .header-content h1 {
             font-size: 2rem;
             margin-bottom: 5px;
@@ -48,7 +48,7 @@
             align-items: center;
             gap: 10px;
         }
-        
+       
         .back-btn {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
@@ -61,36 +61,36 @@
             align-items: center;
             gap: 8px;
         }
-        
+       
         .back-btn:hover {
             background-color: rgba(255, 255, 255, 0.3);
         }
-        
+       
         .sections {
             display: grid;
             gap: 30px;
             margin-bottom: 30px;
         }
-        
+       
         .card {
             background-color: white;
             border-radius: 10px;
             padding: 25px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+       
         .pending-section {
             border-top: 5px solid #f39c12;
         }
-        
+       
         .accepted-section {
             border-top: 5px solid #41b883;
         }
-        
+       
         .paid-section {
             border-top: 5px solid #2c7fb8;
         }
-        
+       
         h2 {
             color: #e74c3c;
             margin-bottom: 20px;
@@ -99,23 +99,23 @@
             align-items: center;
             gap: 10px;
         }
-        
+       
         .pending-section h2 {
             color: #f39c12;
         }
-        
+       
         .accepted-section h2 {
             color: #41b883;
         }
-        
+       
         .paid-section h2 {
             color: #2c7fb8;
         }
-        
+       
         .booking-list {
             list-style-type: none;
         }
-        
+       
         .booking-item {
             padding: 15px;
             border-bottom: 1px solid #eee;
@@ -124,31 +124,31 @@
             align-items: center;
             transition: background-color 0.3s ease;
         }
-        
+       
         .booking-item:hover {
             background-color: #f9f9f9;
         }
-        
+       
         .booking-info {
             flex: 1;
         }
-        
+       
         .booking-name {
             font-weight: 600;
             color: #e74c3c;
             margin-bottom: 5px;
         }
-        
+       
         .booking-details {
             font-size: 0.9rem;
             color: #666;
         }
-        
+       
         .booking-actions {
             display: flex;
             gap: 10px;
         }
-        
+       
         .action-btn {
             padding: 8px 15px;
             border-radius: 5px;
@@ -157,49 +157,49 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        
+       
         .accept-btn {
             background-color: #e6f7ff;
             color: #41b883;
         }
-        
+       
         .accept-btn:hover {
             background-color: #41b883;
             color: white;
         }
-        
+       
         .reject-btn {
             background-color: #ffe6e6;
             color: #e74c3c;
         }
-        
+       
         .reject-btn:hover {
             background-color: #e74c3c;
             color: white;
         }
-        
+       
         .share-location-btn {
             background-color: #e6f2ff;
             color: #2c7fb8;
         }
-        
+       
         .share-location-btn:hover {
             background-color: #2c7fb8;
             color: white;
         }
-        
+       
         .empty-state {
             text-align: center;
             padding: 30px;
             color: #777;
         }
-        
+       
         .empty-state i {
             font-size: 3rem;
             margin-bottom: 15px;
             color: #ddd;
         }
-        
+       
         footer {
             text-align: center;
             padding: 20px;
@@ -207,24 +207,24 @@
             font-size: 0.9rem;
             margin-top: 30px;
         }
-        
+       
         @media (max-width: 768px) {
             .sections {
                 grid-template-columns: 1fr;
             }
-            
+           
             header {
                 flex-direction: column;
                 text-align: center;
                 gap: 15px;
             }
-            
+           
             .booking-item {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
             }
-            
+           
             .booking-actions {
                 width: 100%;
                 justify-content: flex-end;
@@ -244,7 +244,7 @@
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
         </header>
-        
+       
         <div class="sections">
             <div class="card pending-section">
                 <h2><i class="fas fa-clock"></i> Pending Bookings</h2>
@@ -260,6 +260,9 @@
                                         Vehicle: {{ booking.vehicle.name }} | Created: {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
                                         {% if booking.location_link %}
                                             <br>Location Link: {{ booking.location_link }}
+                                        {% endif %}
+                                        {% if booking.payment_status == 'paid' %}
+                                            <br>Prepaid: Yes (Emergency)
                                         {% endif %}
                                     </div>
                                 </div>
@@ -282,7 +285,7 @@
                     </div>
                 {% endif %}
             </div>
-            
+           
             <div class="card accepted-section">
                 <h2><i class="fas fa-check-circle"></i> Accepted Bookings</h2>
                 {% if accepted_bookings %}
@@ -316,7 +319,7 @@
                     </div>
                 {% endif %}
             </div>
-            
+           
             <div class="card paid-section">
                 <h2><i class="fas fa-dollar-sign"></i> Paid Bookings (History)</h2>
                 {% if paid_bookings %}
@@ -332,7 +335,15 @@
                                         {% if booking.location_link %}
                                             <br>Patient Location: {{ booking.location_link }}
                                         {% endif %}
+                                        {% if booking.live_location_link %}
+                                            <br>Current Live Location: {{ booking.live_location_link }}
+                                        {% endif %}
                                     </div>
+                                </div>
+                                <div class="booking-actions">
+                                    <a href="{{ url_for('ambulance_share_live_location', booking_id=booking.id) }}" class="action-btn share-location-btn">
+                                        <i class="fas fa-map-marker-alt"></i> Update Live Location
+                                    </a>
                                 </div>
                             </li>
                         {% endfor %}
@@ -346,7 +357,7 @@
                 {% endif %}
             </div>
         </div>
-        
+       
         <footer>
             <p>© 2023 Hospital Resources Management System. All rights reserved.</p>
         </footer>

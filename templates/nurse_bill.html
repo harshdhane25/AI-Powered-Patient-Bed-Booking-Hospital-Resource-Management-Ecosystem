@@ -1,10 +1,10 @@
-<!-- bill.html (Full updated code - unchanged, but provided as requested) -->
+<!-- nurse_bill.html (New file) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bill Details</title>
+    <title>Nurse Bill Details</title>
     <style>
         * {
             margin: 0;
@@ -216,7 +216,7 @@
 <body>
     <div class="container">
         <div class="bill-header">
-            <h1>Bill Details</h1>
+            <h1>Nurse Bill Details</h1>
             <p>Review your booking information and proceed to payment</p>
         </div>
        
@@ -226,64 +226,41 @@
                     <h3>👤 Patient Information</h3>
                     <div class="bill-item">
                         <span class="bill-label">Patient Name</span>
-                        <span class="bill-value">{{ booking.patient_name }}</span>
+                        <span class="bill-value">{{ booking.patient.name }}</span>
                     </div>
                    
                     <div class="bill-item">
                         <span class="bill-label">Contact Number</span>
-                        <span class="bill-value">{{ booking.contact_number }}</span>
+                        <span class="bill-value">{{ booking.patient.mobile }}</span>
                     </div>
                    
-                    <div class="bill-item">
-                        <span class="bill-label">Age</span>
-                        <span class="bill-value">{{ booking.age }}</span>
-                    </div>
-                   
-                    <div class="bill-item">
-                        <span class="bill-label">Medical Condition</span>
-                        <span class="bill-value">{{ booking.medical_condition or 'N/A' }}</span>
-                    </div>
                 </div>
                
                 <div class="bill-section">
                     <h3>🏥 Booking Details</h3>
                     <div class="bill-item">
-                        <span class="bill-label">Check-in Date</span>
-                        <span class="bill-value">{{ booking.check_in_date }}</span>
+                        <span class="bill-label">Nurse Name</span>
+                        <span class="bill-value">{{ nurse.name }}</span>
                     </div>
                    
                     <div class="bill-item">
-                        <span class="bill-label">Estimated Stay</span>
-                        <span class="bill-value">{{ booking.estimated_stay }} days</span>
+                        <span class="bill-label">Duration Type</span>
+                        <span class="bill-value">{{ booking.duration_type }}</span>
                     </div>
                    
                     <div class="bill-item">
-                        <span class="bill-label">Room</span>
-                        <span class="bill-value">{{ room.name }}</span>
+                        <span class="bill-label">Location</span>
+                        <span class="bill-value">{{ booking.location }}</span>
                     </div>
                    
-                    <div class="bill-item">
-                        <span class="bill-label">Bed Number</span>
-                        <span class="bill-value">{{ bed.bed_number }}</span>
-                    </div>
                 </div>
             </div>
            
             <div class="amount-breakdown">
                 <h3>💰 Amount Breakdown</h3>
                 <div class="calculation-item">
-                    <span class="bill-label">Price per Bed per Day</span>
-                    <span class="bill-value">${{ room.price_per_bed }}</span>
-                </div>
-               
-                <div class="calculation-item">
-                    <span class="bill-label">Estimated Stay</span>
-                    <span class="bill-value">{{ booking.estimated_stay }} days</span>
-                </div>
-               
-                <div class="calculation-item">
-                    <span class="bill-label">Subtotal</span>
-                    <span class="bill-value">${{ room.price_per_bed * booking.estimated_stay }}</span>
+                    <span class="bill-label">Amount</span>
+                    <span class="bill-value">${{ amount }}</span>
                 </div>
                
                 <div class="calculation-total">
@@ -294,7 +271,7 @@
            
             <div class="payment-actions">
                 <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
-                <a href="{{ url_for('patient_pay', booking_id=booking.id) }}" class="btn btn-primary">
+                <a href="{{ url_for('patient_nurse_pay', booking_id=booking.id) }}" class="btn btn-primary">
                     💳 Proceed to Payment
                 </a>
             </div>

@@ -421,8 +421,9 @@
                 {% for vehicle in vehicles %}
                     <div class="vehicle-card">
                         {% if vehicle.image_path %}
-                            <img src="/uploads/{{ vehicle.image_path.replace('uploads/', '') }}" alt="Vehicle Image" class="vehicle-image">
-                        {% endif %}
+                            <img src="{{ url_for('uploaded_file', filename=(vehicle.image_path | replace('\\','/') | replace('uploads/',''))) }}"
+     alt="Vehicle Image" class="vehicle-image">
+        {% endif %}
                         <div class="vehicle-name">{{ vehicle.name }}</div>
                         <div class="vehicle-details">
                             Numberplate: {{ vehicle.numberplate }}<br>

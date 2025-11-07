@@ -205,8 +205,9 @@
                 <div class="form-group">
                     <label for="image">Vehicle Image (Current: {% if vehicle.image_path %}{{ vehicle.image_path.split('/')[-1] }}{% else %}No image{% endif %})</label>
                     {% if vehicle.image_path %}
-                        <img src="{{ url_for('static', filename=vehicle.image_path.replace('uploads/', '')) }}" alt="Current Image" class="current-image">
-                    {% endif %}
+                       <img src="{{ url_for('uploaded_file', filename=(vehicle.image_path | replace('\\','/') | replace('uploads/',''))) }}"
+     alt="Vehicle Image" class="vehicle-image">
+{% endif %}
                     <input type="file" id="image" name="image" accept="image/*">
                 </div>
                 <div class="form-group">
@@ -215,8 +216,8 @@
                 </div>
                 <div class="form-group">
                     <label for="number_plate">Number Plate</label>
-                    <input type="text" id="number_plate" name="number_plate" value="{{ vehicle.number_plate }}" required>
-                </div>
+                    <input type="text" id="numberplate" name="numberplate" value="{{ vehicle.numberplate }}" required>
+</div>
                 <div class="form-group">
                     <label for="cost_price">Cost Price ($)</label>
                     <input type="number" id="cost_price" name="cost_price" value="{{ vehicle.cost_price }}" step="0.01" required>

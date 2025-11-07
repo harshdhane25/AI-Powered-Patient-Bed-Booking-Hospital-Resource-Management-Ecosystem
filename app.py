@@ -1,6 +1,4 @@
-# app.py (Full updated code with new changes)
-
-from flask import Flask, render_template, request, redirect, url_for, session, flash, abort, send_file, make_response, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort, send_file, make_response, send_from_directory, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -20,11 +18,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hospital.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['RAZORPAY_KEY_ID'] = 'rzp_test_RPURGWwDtViv9P'  # Enter your Razorpay key here
-app.config['RAZORPAY_KEY_SECRET'] = 'gHB7AScqU12PUikgM7Fibsu3'  # Enter your Razorpay secret here
+app.config['RAZORPAY_KEY_ID'] = 'rzp_test_RPURGWwDtViv9P' # Enter your Razorpay key here
+app.config['RAZORPAY_KEY_SECRET'] = 'gHB7AScqU12PUikgM7Fibsu3' # Enter your Razorpay secret here
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['SENDER_EMAIL'] = 'harshvardhandhane13@gmail.com'
 app.config['SENDER_PASSWORD'] = 'ipde veha zmzs hhlb'
+
 db = SQLAlchemy(app)
 razorpay_client = razorpay.Client(auth=(app.config['RAZORPAY_KEY_ID'], app.config['RAZORPAY_KEY_SECRET']))
 
@@ -113,7 +112,52 @@ def generate_ambulance_bill_pdf(booking, vehicle):
     p.save()
     return buffer
 
-# Models
+def generate_nurse_bill_pdf(booking, nurse):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    p.drawString(100, 750, "Nurse Booking Bill")
+    y = 700
+    p.drawString(100, y, f"Patient Name: {booking.patient.name}")
+    y -= 20
+    p.drawString(100, y, f"Nurse Name: {nurse.name}")
+    y -= 20
+    p.drawString(100, y, f"Duration Type: {booking.duration_type}")
+    y -= 20
+    p.drawString(100, y, f"Location: {booking.location}")
+    y -= 20
+    p.drawString(100, y, f"Amount: ${booking.amount}")
+    p.save()
+    return buffer
+
+def generate_canteen_bill_pdf(order):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    p.drawString(100, 750, "Canteen Bill")
+    y = 700
+    p.drawString(100, y, f"Patient Name: {order.patient.name}")
+    y -= 20
+    p.drawString(100, y, f"Order ID: {order.id}")
+    y -= 20
+    p.drawString(100, y, f"Date: {order.created_at.strftime('%Y-%m-%d %H:%M')}")
+    if order.room_id:
+        room = Room.query.get(order.room_id)
+        y -= 20
+        p.drawString(100, y, f"Delivery Room: {room.name}")
+    if order.bed_id:
+        bed = Bed.query.get(order.bed_id)
+        y -= 20
+        p.drawString(100, y, f"Delivery Bed: {bed.bed_number}")
+    y -= 20
+    total = 0
+    for item in order.items:
+        p.drawString(100, y, f"{item.item.name} x {item.quantity}: ${item.item.price * item.quantity}")
+        y -= 20
+        total += item.item.price * item.quantity
+    p.drawString(100, y, f"Total Amount: ${total}")
+    p.save()
+    return buffer
+
+# Models (unchanged from provided)
 class Hospital(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -131,7 +175,7 @@ class Doctor(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     mobile = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    info = db.Column(db.Text, nullable=True)  # Professional Information
+    info = db.Column(db.Text, nullable=True) # Professional Information
     qualifications = db.Column(db.Text, nullable=True)
     specializations = db.Column(db.Text, nullable=True)
     practice_years = db.Column(db.Integer, nullable=True)
@@ -145,8 +189,8 @@ class Doctor(db.Model):
 class TimeSlot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctor.id'), nullable=False)
-    start_time = db.Column(db.String(5), nullable=False)  # e.g., '09:00'
-    end_time = db.Column(db.String(5), nullable=False)    # e.g., '10:00'
+    start_time = db.Column(db.String(5), nullable=False) # e.g., '09:00'
+    end_time = db.Column(db.String(5), nullable=False) # e.g., '10:00'
     price = db.Column(db.Float, nullable=False)
     appointments = db.relationship('Appointment', backref='time_slot', lazy=True)
 
@@ -178,7 +222,7 @@ class Ambulance(db.Model):
     mobile = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     info = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default='available')  # available, on duty, under maintenance
+    status = db.Column(db.String(20), default='available') # available, on duty, under maintenance
     vehicles = db.relationship('AmbulanceVehicle', backref='ambulance', lazy=True, cascade="all, delete-orphan")
     bookings = db.relationship('AmbulanceBooking', backref='ambulance', lazy=True, cascade="all, delete-orphan")
     reviews = db.relationship('AmbulanceReview', backref='ambulance', lazy=True, cascade="all, delete-orphan")
@@ -199,9 +243,10 @@ class AmbulanceBooking(db.Model):
     vehicle_id = db.Column(db.Integer, db.ForeignKey('ambulance_vehicle.id'), nullable=False)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
     status = db.Column(db.String(20), default='pending')
-    use_type = db.Column(db.String(20), nullable=False)  # emergency or normal
-    location_link = db.Column(db.Text, nullable=True)  # patient's for emergency, ambulance's for normal
-    live_location_link = db.Column(db.Text, nullable=True)  # ambulance's live link for normal
+    payment_status = db.Column(db.String(20), default='unpaid')
+    use_type = db.Column(db.String(20), nullable=False) # emergency or normal
+    location_link = db.Column(db.Text, nullable=True) # patient's for emergency, ambulance's for normal
+    live_location_link = db.Column(db.Text, nullable=True) # ambulance's live link for normal
     amount = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -222,6 +267,35 @@ class Nurse(db.Model):
     mobile = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     info = db.Column(db.Text, nullable=True)
+    availability_locations = db.Column(db.String(50), nullable=True) # e.g., 'home,hospital'
+    status = db.Column(db.String(20), default='available') # available, booked
+    bookings = db.relationship('NurseBooking', backref='nurse', lazy=True, cascade="all, delete-orphan")
+    nurse_reviews = db.relationship('NurseReview', backref='nurse', lazy=True, cascade="all, delete-orphan")
+    rates = db.relationship('NurseRate', backref='nurse', lazy=True, cascade="all, delete-orphan")
+
+class NurseRate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nurse_id = db.Column(db.Integer, db.ForeignKey('nurse.id'), nullable=False)
+    rate_type = db.Column(db.String(50), nullable=False) # 'per_hour_home', 'per_hour_hospital', 'per_day_home', 'per_day_hospital'
+    price = db.Column(db.Float, nullable=False)
+
+class NurseBooking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nurse_id = db.Column(db.Integer, db.ForeignKey('nurse.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending') # pending, accepted, paid, rejected
+    duration_type = db.Column(db.String(20), nullable=False) # 'per_hour', 'per_day'
+    location = db.Column(db.String(20), nullable=False) # 'home', 'hospital'
+    amount = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class NurseReview(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nurse_id = db.Column(db.Integer, db.ForeignKey('nurse.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Canteen(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -232,7 +306,54 @@ class Canteen(db.Model):
     mobile = db.Column(db.String(20), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     info = db.Column(db.Text, nullable=True)
+    categories = db.relationship('CanteenCategory', backref='canteen', lazy=True, cascade="all, delete-orphan")
+    orders = db.relationship('CanteenOrder', backref='canteen', lazy=True, cascade="all, delete-orphan")
+    reviews = db.relationship('CanteenReview', backref='canteen', lazy=True, cascade="all, delete-orphan")
 
+class CanteenCategory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    canteen_id = db.Column(db.Integer, db.ForeignKey('canteen.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    items = db.relationship('CanteenItem', backref='category', lazy=True, cascade="all, delete-orphan")
+
+class CanteenItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('canteen_category.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+class CanteenOrder(db.Model):
+    __tablename__ = 'canteen_order'
+    id = db.Column(db.Integer, primary_key=True)
+    canteen_id = db.Column(db.Integer, db.ForeignKey('canteen.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True) # New field
+    bed_id = db.Column(db.Integer, db.ForeignKey('bed.id'), nullable=True) # New field
+    status = db.Column(db.String(20), default='pending') # pending, accepted, paid, preparing, out_for_delivery, delivered
+    payment_status = db.Column(db.String(20), default='unpaid')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    items = db.relationship('CanteenOrderItem', backref='order', lazy=True, cascade="all, delete-orphan")
+
+    # Add these relationships:
+    room = db.relationship('Room', backref='orders', lazy=True)
+    bed = db.relationship('Bed', backref='orders', lazy=True)
+
+class CanteenOrderItem(db.Model):
+    __tablename__ = 'canteen_order_item'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('canteen_order.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('canteen_item.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    item = db.relationship('CanteenItem')
+
+class CanteenReview(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    canteen_id = db.Column(db.Integer, db.ForeignKey('canteen.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+ 
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -246,6 +367,10 @@ class Patient(db.Model):
     doctor_reviews = db.relationship('DoctorReview', backref='patient', lazy=True, cascade="all, delete-orphan")
     ambulance_bookings = db.relationship('AmbulanceBooking', backref='patient', lazy=True, cascade="all, delete-orphan")
     ambulance_reviews = db.relationship('AmbulanceReview', backref='patient', lazy=True, cascade="all, delete-orphan")
+    nurse_bookings = db.relationship('NurseBooking', backref='patient', lazy=True, cascade="all, delete-orphan")
+    nurse_reviews = db.relationship('NurseReview', backref='patient', lazy=True, cascade="all, delete-orphan")
+    canteen_orders = db.relationship('CanteenOrder', backref='patient', lazy=True, cascade="all, delete-orphan")
+    canteen_reviews = db.relationship('CanteenReview', backref='patient', lazy=True, cascade="all, delete-orphan")
 
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -302,7 +427,7 @@ with app.app_context():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# Routes (all existing + new)
+# Routes (all existing + updated for canteen)
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -524,7 +649,7 @@ def admin_remove_nurse(nurse_id):
     flash('Nurse removed')
     return redirect(url_for('admin_nurses'))
 
-# Canteen (unchanged)
+# Canteen (updated)
 @app.route('/admin/canteens', methods=['GET', 'POST'])
 def admin_canteens():
     if 'role' not in session or session['role'] != 'admin':
@@ -796,8 +921,8 @@ def doctor_appointments():
     today = date.today()
     # Join with TimeSlot to access time_slot information
     appointments = db.session.query(Appointment).join(TimeSlot).filter(
-        Appointment.doctor_id == doctor_id, 
-        Appointment.appointment_date == today, 
+        Appointment.doctor_id == doctor_id,
+        Appointment.appointment_date == today,
         Appointment.status == 'paid'
     ).all()
     return render_template('doctor_appointments.html', appointments=appointments, today_date=today)
@@ -876,7 +1001,7 @@ def doctor_delete_review(review_id):
     flash('Review deleted')
     return redirect(url_for('doctor_manage_reviews'))
 
-# Ambulance Routes (updated and new)
+# Ambulance Routes (unchanged)
 @app.route('/ambulance/login', methods=['GET', 'POST'])
 def ambulance_login():
     if request.method == 'POST':
@@ -992,13 +1117,19 @@ def ambulance_accept_booking(booking_id):
     if request.method == 'POST':
         live_location_link = request.form['live_location_link']
         booking.live_location_link = live_location_link
-        booking.status = 'accepted'
-        vehicle = booking.vehicle
         patient = booking.patient
-        pdf_buffer = generate_ambulance_bill_pdf(booking, vehicle)
-        subject = "Ambulance Booking Accepted"
-        body = f"Dear {patient.name},\n\nYour ambulance booking request has been accepted. Please pay the bill to confirm.\nLive Location Link: {live_location_link}\n\nBest regards,\nAmbulance Team"
-        send_email(patient.email, subject, body, pdf_buffer)
+        vehicle = booking.vehicle
+        if booking.use_type == 'emergency':
+            booking.status = 'paid'
+            subject = "Ambulance is on the Way"
+            body = f"Dear {patient.name},\n\nAmbulance is on the way. Here is the live location: {live_location_link}\n\nBest regards,\nAmbulance Team"
+            send_email(patient.email, subject, body)
+        else:
+            booking.status = 'accepted'
+            pdf_buffer = generate_ambulance_bill_pdf(booking, vehicle)
+            subject = "Ambulance Booking Accepted"
+            body = f"Dear {patient.name},\n\nYour ambulance booking request has been accepted. Please pay the bill to confirm.\nLive Location Link: {live_location_link}\n\nBest regards,\nAmbulance Team"
+            send_email(patient.email, subject, body, pdf_buffer)
         db.session.commit()
         flash('Booking accepted and email sent')
         return redirect(url_for('ambulance_bookings'))
@@ -1009,12 +1140,11 @@ def ambulance_share_live_location(booking_id):
     if 'role' not in session or session['role'] != 'ambulance':
         return redirect(url_for('ambulance_login'))
     booking = AmbulanceBooking.query.get_or_404(booking_id)
-    if booking.ambulance_id != session['user_id'] or booking.status != 'accepted':
+    if booking.ambulance_id != session['user_id'] or booking.status not in ['accepted', 'paid']:
         abort(403)
     if request.method == 'POST':
         live_location_link = request.form['live_location_link']
         booking.live_location_link = live_location_link
-        vehicle = booking.vehicle
         patient = booking.patient
         subject = "Ambulance Live Location Updated"
         body = f"Dear {patient.name},\n\nThe live location for your ambulance booking has been updated. Live Location Link: {live_location_link}\n\nBest regards,\nAmbulance Team"
@@ -1031,11 +1161,13 @@ def ambulance_reject_booking(booking_id):
     booking = AmbulanceBooking.query.get_or_404(booking_id)
     if booking.ambulance_id != session['user_id']:
         abort(403)
-    booking.status = 'rejected'
     patient = booking.patient
-    subject = "Ambulance Booking Rejected"
-    body = f"Dear {patient.name},\n\nYour ambulance booking request has been rejected.\n\nBest regards,\nAmbulance Team"
-    send_email(patient.email, subject, body)
+    booking.status = 'rejected'
+    if booking.payment_status == 'paid':
+        body = f"Dear {patient.name},\n\nYour ambulance booking request has been rejected. Refund will be sent soon.\n\nBest regards,\nAmbulance Team"
+    else:
+        body = f"Dear {patient.name},\n\nYour ambulance booking request has been rejected.\n\nBest regards,\nAmbulance Team"
+    send_email(patient.email, "Ambulance Booking Rejected", body)
     db.session.commit()
     flash('Booking rejected')
     return redirect(url_for('ambulance_bookings'))
@@ -1086,9 +1218,126 @@ def nurse_dashboard():
         nurse.info = request.form['info']
         db.session.commit()
         flash('Details updated')
+    elif request.method == 'POST' and 'update_status' in request.form:
+        nurse.status = request.form['status']
+        db.session.commit()
+        flash('Status updated')
     return render_template('nurse_dashboard.html', nurse=nurse)
 
-# Canteen Routes (unchanged)
+@app.route('/nurse/set_price', methods=['GET', 'POST'])
+def nurse_set_price():
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    nurse = Nurse.query.get(session['user_id'])
+    rates = NurseRate.query.filter_by(nurse_id=session['user_id']).all()
+    if request.method == 'POST':
+        if 'add_rate' in request.form:
+            rate_type = request.form['rate_type']
+            price = float(request.form['price'])
+            existing = NurseRate.query.filter_by(nurse_id=session['user_id'], rate_type=rate_type).first()
+            if existing:
+                existing.price = price
+            else:
+                new_rate = NurseRate(nurse_id=session['user_id'], rate_type=rate_type, price=price)
+                db.session.add(new_rate)
+            db.session.commit()
+            flash('Rate added/updated')
+        elif 'edit_rate' in request.form:
+            rate_id = int(request.form['rate_id'])
+            price = float(request.form['price'])
+            rate = NurseRate.query.get_or_404(rate_id)
+            if rate.nurse_id != session['user_id']:
+                abort(403)
+            rate.price = price
+            db.session.commit()
+            flash('Rate updated')
+        elif 'delete_rate' in request.form:
+            rate_id = int(request.form['rate_id'])
+            rate = NurseRate.query.get_or_404(rate_id)
+            if rate.nurse_id != session['user_id']:
+                abort(403)
+            db.session.delete(rate)
+            db.session.commit()
+            flash('Rate deleted')
+        elif 'update_availability' in request.form:
+            availability = ','.join(request.form.getlist('availability'))
+            nurse.availability_locations = availability
+            db.session.commit()
+            flash('Availability updated')
+        return redirect(url_for('nurse_set_price'))
+    return render_template('nurse_set_price.html', nurse=nurse, rates=rates)
+
+@app.route('/nurse/patient_requests')
+def nurse_patient_requests():
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    nurse_id = session['user_id']
+    bookings = NurseBooking.query.filter_by(nurse_id=nurse_id).all()
+    pending_bookings = [b for b in bookings if b.status == 'pending']
+    accepted_bookings = [b for b in bookings if b.status == 'accepted']
+    paid_bookings = [b for b in bookings if b.status == 'paid']
+    return render_template('nurse_patient_requests.html', pending_bookings=pending_bookings, accepted_bookings=accepted_bookings, paid_bookings=paid_bookings)
+
+@app.route('/nurse/accept_booking/<int:booking_id>')
+def nurse_accept_booking(booking_id):
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    booking = NurseBooking.query.get_or_404(booking_id)
+    if booking.nurse_id != session['user_id']:
+        abort(403)
+    booking.status = 'accepted'
+    nurse = booking.nurse
+    patient = booking.patient
+    nurse.status = 'booked'
+    db.session.commit()
+    flash('Booking accepted')
+    # Send email to patient
+    if patient and patient.email:
+        subject = "Nurse Booking Request Accepted"
+        body = f"Dear {patient.name},\n\nYour request for Nurse {nurse.name} ({booking.duration_type} at {booking.location}) has been accepted. Please pay the bill to confirm.\n\nBest regards,\nHospital Team"
+        send_email(patient.email, subject, body)
+    return redirect(url_for('nurse_patient_requests'))
+
+@app.route('/nurse/reject_booking/<int:booking_id>')
+def nurse_reject_booking(booking_id):
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    booking = NurseBooking.query.get_or_404(booking_id)
+    if booking.nurse_id != session['user_id']:
+        abort(403)
+    patient = booking.patient
+    nurse = booking.nurse
+    booking.status = 'rejected'
+    db.session.commit()
+    flash('Booking rejected')
+    # Send email to patient
+    if patient and patient.email:
+        subject = "Nurse Booking Request Rejected"
+        body = f"Dear {patient.name},\n\nYour request for Nurse {nurse.name} ({booking.duration_type} at {booking.location}) has been rejected.\n\nBest regards,\nHospital Team"
+        send_email(patient.email, subject, body)
+    return redirect(url_for('nurse_patient_requests'))
+
+@app.route('/nurse/manage_reviews')
+def nurse_manage_reviews():
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    nurse_id = session['user_id']
+    reviews = NurseReview.query.filter_by(nurse_id=nurse_id).order_by(NurseReview.created_at.desc()).all()
+    return render_template('nurse_manage_reviews.html', reviews=reviews)
+
+@app.route('/nurse/delete_review/<int:review_id>')
+def nurse_delete_review(review_id):
+    if 'role' not in session or session['role'] != 'nurse':
+        return redirect(url_for('nurse_login'))
+    review = NurseReview.query.get_or_404(review_id)
+    if review.nurse_id != session['user_id']:
+        abort(403)
+    db.session.delete(review)
+    db.session.commit()
+    flash('Review deleted')
+    return redirect(url_for('nurse_manage_reviews'))
+
+# Canteen Routes (updated with new features and status emails)
 @app.route('/canteen/login', methods=['GET', 'POST'])
 def canteen_login():
     if request.method == 'POST':
@@ -1114,9 +1363,180 @@ def canteen_dashboard():
         canteen.info = request.form['info']
         db.session.commit()
         flash('Details updated')
-    return render_template('canteen_dashboard.html', canteen=canteen)
+    # Get preparing orders for dashboard
+    preparing_orders = CanteenOrder.query.filter_by(canteen_id=session['user_id'], status='preparing').all()
+    return render_template('canteen_dashboard.html', canteen=canteen, preparing_orders=preparing_orders)
 
-# Patient Routes (updated and new)
+@app.route('/canteen/menu_management', methods=['GET', 'POST'])
+def canteen_menu_management():
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    canteen_id = session['user_id']
+    categories = CanteenCategory.query.filter_by(canteen_id=canteen_id).all()
+    if request.method == 'POST':
+        if 'add_category' in request.form:
+            name = request.form['name']
+            new_category = CanteenCategory(canteen_id=canteen_id, name=name)
+            db.session.add(new_category)
+            db.session.commit()
+            flash('Category added')
+        elif 'edit_category' in request.form:
+            category_id = int(request.form['category_id'])
+            name = request.form['name']
+            category = CanteenCategory.query.get_or_404(category_id)
+            if category.canteen_id != canteen_id:
+                abort(403)
+            category.name = name
+            db.session.commit()
+            flash('Category updated')
+        elif 'delete_category' in request.form:
+            category_id = int(request.form['category_id'])
+            category = CanteenCategory.query.get_or_404(category_id)
+            if category.canteen_id != canteen_id:
+                abort(403)
+            db.session.delete(category)
+            db.session.commit()
+            flash('Category deleted')
+        elif 'add_item' in request.form:
+            category_id = int(request.form['category_id'])
+            name = request.form['name']
+            price = float(request.form['price'])
+            new_item = CanteenItem(category_id=category_id, name=name, price=price)
+            db.session.add(new_item)
+            db.session.commit()
+            flash('Item added')
+        elif 'edit_item' in request.form:
+            item_id = int(request.form['item_id'])
+            name = request.form['name']
+            price = float(request.form['price'])
+            item = CanteenItem.query.get_or_404(item_id)
+            item.name = name
+            item.price = price
+            db.session.commit()
+            flash('Item updated')
+        elif 'delete_item' in request.form:
+            item_id = int(request.form['item_id'])
+            item = CanteenItem.query.get_or_404(item_id)
+            db.session.delete(item)
+            db.session.commit()
+            flash('Item deleted')
+        return redirect(url_for('canteen_menu_management'))
+    return render_template('canteen_menu_management.html', categories=categories)
+
+@app.route('/canteen/orders')
+def canteen_orders():
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    canteen_id = session['user_id']
+    orders = CanteenOrder.query.filter_by(canteen_id=canteen_id).all()
+    pending_orders = [o for o in orders if o.status == 'pending']
+    accepted_orders = [o for o in orders if o.status == 'accepted']
+    paid_orders = [o for o in orders if o.status == 'paid']
+    delivered_orders = [o for o in orders if o.status == 'delivered']
+    preparing_orders = [o for o in orders if o.status == 'preparing']
+    out_for_delivery_orders = [o for o in orders if o.status == 'out_for_delivery']
+    return render_template('canteen_orders.html', pending_orders=pending_orders, accepted_orders=accepted_orders, paid_orders=paid_orders, delivered_orders=delivered_orders, preparing_orders=preparing_orders, out_for_delivery_orders=out_for_delivery_orders)
+
+@app.route('/canteen/accept_order/<int:order_id>')
+def canteen_accept_order(order_id):
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.canteen_id != session['user_id']:
+        abort(403)
+    order.status = 'accepted'
+    db.session.commit()
+    patient = order.patient
+    total_amount = sum(item.item.price * item.quantity for item in order.items)
+    subject = "Your Canteen Order is Accepted"
+    body = f"Dear {patient.name},\n\nYour canteen order has been accepted. Total: ${total_amount}\nItems:\n"
+    for item in order.items:
+        body += f"- {item.item.name} x {item.quantity} = ${item.item.price * item.quantity}\n"
+    body += "\nPlease pay the bill to confirm.\n\nBest regards,\nCanteen Team"
+    send_email(patient.email, subject, body)
+    flash('Order accepted')
+    return redirect(url_for('canteen_orders'))
+
+@app.route('/canteen/reject_order/<int:order_id>')
+def canteen_reject_order(order_id):
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.canteen_id != session['user_id']:
+        abort(403)
+    order.status = 'rejected'
+    db.session.commit()
+    patient = order.patient
+    subject = "Your Canteen Order is Rejected"
+    body = f"Dear {patient.name},\n\nYour canteen order has been rejected. Please place another order or call.\n\nBest regards,\nCanteen Team"
+    send_email(patient.email, subject, body)
+    flash('Order rejected')
+    return redirect(url_for('canteen_orders'))
+
+@app.route('/canteen/update_status/<int:order_id>', methods=['GET', 'POST'])
+def canteen_update_status(order_id):
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.canteen_id != session['user_id']:
+        abort(403)
+    if request.method == 'POST':
+        new_status = request.form['status']
+        patient = order.patient
+        total_amount = sum(item.item.price * item.quantity for item in order.items)
+        if new_status == 'preparing':
+            order.status = 'preparing'
+            subject = "Your Order is Being Prepared"
+            body = f"Dear {patient.name},\n\nYour order is going to preparing. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            send_email(patient.email, subject, body)
+        elif new_status == 'out_for_delivery':
+            order.status = 'out_for_delivery'
+            subject = "Your Food is Out for Delivery"
+            body = f"Dear {patient.name},\n\nYour food order is out for delivery. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            send_email(patient.email, subject, body)
+        elif new_status == 'delivered':
+            order.status = 'delivered'
+            subject = "Your Order is Delivered Successfully"
+            body = f"Dear {patient.name},\n\nYour order is delivered successfully. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            send_email(patient.email, subject, body)
+        db.session.commit()
+        flash('Status updated')
+        return redirect(url_for('canteen_orders'))
+    return render_template('canteen_update_status.html', order=order)
+    
+    
+@app.route('/canteen/update_statuses')
+def canteen_update_statuses():
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    canteen_id = session['user_id']
+    orders = CanteenOrder.query.filter_by(canteen_id=canteen_id).filter(
+        CanteenOrder.status.in_(['accepted', 'paid', 'preparing'])
+    ).order_by(CanteenOrder.created_at.desc()).all()
+    return render_template('canteen_update_statuses.html', orders=orders)
+    
+
+@app.route('/canteen/manage_reviews')
+def canteen_manage_reviews():
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    canteen_id = session['user_id']
+    reviews = CanteenReview.query.filter_by(canteen_id=canteen_id).order_by(CanteenReview.created_at.desc()).all()
+    return render_template('canteen_manage_reviews.html', reviews=reviews)
+
+@app.route('/canteen/delete_review/<int:review_id>')
+def canteen_delete_review(review_id):
+    if 'role' not in session or session['role'] != 'canteen':
+        return redirect(url_for('canteen_login'))
+    review = CanteenReview.query.get_or_404(review_id)
+    if review.canteen_id != session['user_id']:
+        abort(403)
+    db.session.delete(review)
+    db.session.commit()
+    flash('Review deleted')
+    return redirect(url_for('canteen_manage_reviews'))
+
+# Patient Routes (updated with canteen features)
 @app.route('/patient/login', methods=['GET', 'POST'])
 def patient_login():
     if request.method == 'POST':
@@ -1162,18 +1582,24 @@ def patient_dashboard():
     pending_requests = [b for b in bookings if b.status == 'pending']
     accepted_unpaid = [b for b in bookings if b.status == 'accepted']
     history_bookings = [b for b in bookings if b.status in ['paid', 'rejected']]
-    
     # Join appointments with time_slots to access time_slot information
     appointments = db.session.query(Appointment).join(TimeSlot).filter(
         Appointment.patient_id == session['user_id']
     ).all()
     history_appointments = [a for a in appointments if a.status == 'paid']
-    
     # Ambulance
     ambulance_pending = AmbulanceBooking.query.filter_by(patient_id=session['user_id'], status='pending').all()
     ambulance_notifications = AmbulanceBooking.query.filter_by(patient_id=session['user_id'], status='accepted').all()
     ambulance_history = AmbulanceBooking.query.filter_by(patient_id=session['user_id'], status='paid').all()
-    
+    # Nurse
+    nurse_pending = NurseBooking.query.filter_by(patient_id=session['user_id'], status='pending').all()
+    nurse_notifications = NurseBooking.query.filter_by(patient_id=session['user_id'], status='accepted').all()
+    nurse_history = NurseBooking.query.filter_by(patient_id=session['user_id'], status='paid').all()
+    # Canteen
+    canteen_orders = CanteenOrder.query.filter_by(patient_id=session['user_id']).all()
+    canteen_pending = [o for o in canteen_orders if o.status == 'pending']
+    canteen_notifications = [o for o in canteen_orders if o.status == 'accepted']
+    canteen_history = [o for o in canteen_orders if o.status in ['paid', 'delivered', 'preparing', 'out_for_delivery']]
     if request.method == 'POST' and 'edit' in request.form:
         patient.name = request.form['name']
         patient.mobile = request.form['mobile']
@@ -1181,7 +1607,7 @@ def patient_dashboard():
         patient.info = request.form['info']
         db.session.commit()
         flash('Details updated')
-    return render_template('patient_dashboard.html', patient=patient, hospitals=hospitals, pending_requests=pending_requests, accepted_unpaid=accepted_unpaid, history_bookings=history_bookings, history_appointments=history_appointments, ambulance_pending=ambulance_pending, ambulance_notifications=ambulance_notifications, ambulance_history=ambulance_history)
+    return render_template('patient_dashboard.html', patient=patient, hospitals=hospitals, pending_requests=pending_requests, accepted_unpaid=accepted_unpaid, history_bookings=history_bookings, history_appointments=history_appointments, ambulance_pending=ambulance_pending, ambulance_notifications=ambulance_notifications, ambulance_history=ambulance_history, nurse_pending=nurse_pending, nurse_notifications=nurse_notifications, nurse_history=nurse_history, canteen_pending=canteen_pending, canteen_notifications=canteen_notifications, canteen_history=canteen_history)
 
 @app.route('/patient/hospital/<int:hospital_id>')
 def patient_hospital(hospital_id):
@@ -1194,6 +1620,323 @@ def patient_hospital(hospital_id):
     canteens = Canteen.query.filter_by(hospital_id=hospital_id).all()
     rooms = Room.query.filter_by(hospital_id=hospital_id).all()
     return render_template('patient_hospital.html', hospital=hospital, doctors=doctors, ambulances=ambulances, nurses=nurses, canteens=canteens, rooms=rooms)
+
+@app.route('/patient/canteen/<int:canteen_id>')
+def patient_canteen(canteen_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    canteen = Canteen.query.get_or_404(canteen_id)
+    categories = CanteenCategory.query.filter_by(canteen_id=canteen_id).all()
+    reviews = CanteenReview.query.filter_by(canteen_id=canteen_id).order_by(CanteenReview.created_at.desc()).all()
+    # Get rooms and beds for the canteen's hospital
+    hospital_id = canteen.hospital_id
+    rooms = Room.query.filter_by(hospital_id=hospital_id).all()
+    # Build a JSON-serializable map: keys as strings -> list of simple dicts
+    beds_by_room = {}
+    for room in rooms:
+        beds = Bed.query.filter_by(room_id=room.id).all()
+        beds_by_room[str(room.id)] = [
+            {
+                "id": b.id,
+                "bed_number": b.bed_number,
+                "status": b.status
+            }
+            for b in beds
+        ]
+
+    return render_template('patient_canteen.html', canteen=canteen, categories=categories, reviews=reviews, rooms=rooms, beds_by_room=beds_by_room)
+
+@app.route('/patient/submit_canteen_order/<int:canteen_id>', methods=['POST'])
+def patient_submit_canteen_order(canteen_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+
+    # selected_items may be an empty string; ensure it becomes a dict
+    selected_items_raw = request.form.get('selected_items', '')
+
+    try:
+        selected_items = json.loads(selected_items_raw) if selected_items_raw else {}
+    except Exception:
+        selected_items = {}
+
+    # room_id/bed_id come from <select>; convert to int only if provided
+    room_id_raw = request.form.get('room_id') or None
+    bed_id_raw = request.form.get('bed_id') or None
+
+    room_id = int(room_id_raw) if room_id_raw else None
+    bed_id = int(bed_id_raw) if bed_id_raw else None
+
+    new_order = CanteenOrder(
+        canteen_id=canteen_id,
+        patient_id=session['user_id'],
+        status='pending',
+        payment_status='unpaid',
+        room_id=room_id,
+        bed_id=bed_id
+    )
+
+    db.session.add(new_order)
+    db.session.commit()
+
+    for item_id, quantity in selected_items.items():
+        order_item = CanteenOrderItem(
+            order_id=new_order.id,
+            item_id=item_id,
+            quantity=quantity
+        )
+        db.session.add(order_item)
+
+    db.session.commit()
+
+    flash('Order request sent')
+    return redirect(url_for('patient_dashboard'))
+
+@app.route('/patient/canteen_bill/<int:order_id>')
+def patient_canteen_bill(order_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.patient_id != session['user_id'] or order.status != 'accepted':
+        abort(403)
+    total_amount = sum(item.item.price * item.quantity for item in order.items)
+    return render_template('canteen_bill.html', order=order, total_amount=total_amount)
+
+@app.route('/patient/canteen_pay/<int:order_id>')
+def patient_canteen_pay(order_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.patient_id != session['user_id'] or order.status != 'accepted':
+        abort(403)
+    total_amount = sum(item.item.price * item.quantity for item in order.items)
+    razorpay_order = razorpay_client.order.create({
+        "amount": int(total_amount * 100),
+        "currency": "INR",
+        "receipt": f"canteen_{order_id}"
+    })
+    return render_template('canteen_payment.html', order=razorpay_order, key=app.config['RAZORPAY_KEY_ID'], amount=total_amount, order_id=order_id)
+
+@app.route('/canteen_payment_success/<int:order_id>', methods=['POST'])
+def canteen_payment_success(order_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    params = {
+        'razorpay_order_id': request.form['razorpay_order_id'],
+        'razorpay_payment_id': request.form['razorpay_payment_id'],
+        'razorpay_signature': request.form['razorpay_signature']
+    }
+    try:
+        razorpay_client.utility.verify_payment_signature(params)
+        order = CanteenOrder.query.get_or_404(order_id)
+        if order.patient_id != session['user_id']:
+            abort(403)
+        order.status = 'paid'
+        order.payment_status = 'paid'
+        db.session.commit()
+        flash('Payment successful! Order confirmed.')
+        patient = Patient.query.get(order.patient_id)
+        pdf_buffer = generate_canteen_bill_pdf(order)
+        subject = "Canteen Order Confirmed - Thank You!"
+        body = f"Dear {patient.name},\n\nThank you for your order. Please find the bill attached.\n\nBest regards,\nCanteen Team"
+        send_email(patient.email, subject, body, pdf_buffer)
+    except Exception as e:
+        print(f"Payment verification failed: {e}")
+        flash('Payment verification failed.')
+    return redirect(url_for('patient_dashboard'))
+
+@app.route('/patient/download_canteen_bill/<int:order_id>')
+def patient_download_canteen_bill(order_id):
+    order = CanteenOrder.query.get_or_404(order_id)
+    if order.status != 'paid':
+        abort(403)
+    if 'role' in session and session['role'] == 'patient' and order.patient_id != session['user_id']:
+        abort(403)
+    buffer = generate_canteen_bill_pdf(order)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"canteen_bill_{order_id}.pdf", mimetype='application/pdf')
+
+@app.route('/patient/add_canteen_review/<int:canteen_id>', methods=['POST'])
+def patient_add_canteen_review(canteen_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    rating = int(request.form['rating'])
+    text = request.form.get('text')
+    new_review = CanteenReview(canteen_id=canteen_id, patient_id=session['user_id'], rating=rating, text=text)
+    db.session.add(new_review)
+    db.session.commit()
+    flash('Review added')
+    return redirect(url_for('patient_canteen', canteen_id=canteen_id))
+
+@app.route('/patient/edit_canteen_review/<int:review_id>', methods=['GET', 'POST'])
+def patient_edit_canteen_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = CanteenReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    if request.method == 'POST':
+        review.rating = int(request.form['rating'])
+        review.text = request.form.get('text')
+        db.session.commit()
+        flash('Review updated')
+        return redirect(url_for('patient_canteen', canteen_id=review.canteen_id))
+    return render_template('patient_edit_canteen_review.html', review=review)
+
+@app.route('/patient/delete_canteen_review/<int:review_id>')
+def patient_delete_canteen_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = CanteenReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    canteen_id = review.canteen_id
+    db.session.delete(review)
+    db.session.commit()
+    flash('Review deleted')
+    return redirect(url_for('patient_canteen', canteen_id=canteen_id))
+
+@app.route('/patient/nurse/<int:nurse_id>')
+def patient_nurse(nurse_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    nurse = Nurse.query.get_or_404(nurse_id)
+    reviews = NurseReview.query.filter_by(nurse_id=nurse_id).order_by(NurseReview.created_at.desc()).all()
+    rates = NurseRate.query.filter_by(nurse_id=nurse_id).all()
+    return render_template('patient_nurse.html', nurse=nurse, reviews=reviews, rates=rates)
+
+@app.route('/patient/book_nurse/<int:nurse_id>', methods=['GET', 'POST'])
+def patient_book_nurse(nurse_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    nurse = Nurse.query.get_or_404(nurse_id)
+    if nurse.status != 'available':
+        flash('Nurse is already booked')
+        return redirect(url_for('patient_nurse', nurse_id=nurse_id))
+    if request.method == 'POST':
+        duration_type = request.form['duration_type']
+        location = request.form['location']
+        if location not in nurse.availability_locations.split(','):
+            flash('Invalid location')
+            return redirect(url_for('patient_book_nurse', nurse_id=nurse_id))
+        rate_type = duration_type + '_' + location
+        rate = NurseRate.query.filter_by(nurse_id=nurse_id, rate_type=rate_type).first()
+        if not rate:
+            flash('No rate for this combination')
+            return redirect(url_for('patient_book_nurse', nurse_id=nurse_id))
+        amount = rate.price
+        new_booking = NurseBooking(nurse_id=nurse_id, patient_id=session['user_id'], duration_type=duration_type, location=location, amount=amount)
+        db.session.add(new_booking)
+        db.session.commit()
+        flash('Booking request sent')
+        return redirect(url_for('patient_dashboard'))
+    return render_template('book_nurse.html', nurse=nurse)
+
+@app.route('/patient/add_nurse_review/<int:nurse_id>', methods=['POST'])
+def patient_add_nurse_review(nurse_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    nurse = Nurse.query.get_or_404(nurse_id)
+    rating = int(request.form['rating'])
+    text = request.form.get('text')
+    new_review = NurseReview(nurse_id=nurse_id, patient_id=session['user_id'], rating=rating, text=text)
+    db.session.add(new_review)
+    db.session.commit()
+    flash('Review added')
+    return redirect(url_for('patient_nurse', nurse_id=nurse_id))
+
+@app.route('/patient/edit_nurse_review/<int:review_id>', methods=['GET', 'POST'])
+def patient_edit_nurse_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = NurseReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    if request.method == 'POST':
+        review.rating = int(request.form['rating'])
+        review.text = request.form.get('text')
+        db.session.commit()
+        flash('Review updated')
+        return redirect(url_for('patient_nurse', nurse_id=review.nurse_id))
+    return render_template('patient_edit_nurse_review.html', review=review)
+
+@app.route('/patient/delete_nurse_review/<int:review_id>')
+def patient_delete_nurse_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = NurseReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    nurse_id = review.nurse_id
+    db.session.delete(review)
+    db.session.commit()
+    flash('Review deleted')
+    return redirect(url_for('patient_nurse', nurse_id=nurse_id))
+
+@app.route('/patient/nurse_bill/<int:booking_id>')
+def patient_nurse_bill(booking_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    booking = NurseBooking.query.get_or_404(booking_id)
+    if booking.patient_id != session['user_id'] or booking.status != 'accepted':
+        abort(403)
+    nurse = booking.nurse
+    amount = booking.amount
+    return render_template('nurse_bill.html', booking=booking, amount=amount, nurse=nurse)
+
+@app.route('/patient/nurse_pay/<int:booking_id>')
+def patient_nurse_pay(booking_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    booking = NurseBooking.query.get_or_404(booking_id)
+    if booking.patient_id != session['user_id'] or booking.status != 'accepted':
+        abort(403)
+    amount = booking.amount
+    order = razorpay_client.order.create({
+        "amount": int(amount * 100),
+        "currency": "INR",
+        "receipt": f"nurse_{booking_id}"
+    })
+    return render_template('nurse_payment.html', order=order, key=app.config['RAZORPAY_KEY_ID'], amount=amount, booking_id=booking_id, success_url=url_for('nurse_payment_success', booking_id=booking_id))
+
+@app.route('/nurse_payment_success/<int:booking_id>', methods=['POST'])
+def nurse_payment_success(booking_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    params = {
+        'razorpay_order_id': request.form['razorpay_order_id'],
+        'razorpay_payment_id': request.form['razorpay_payment_id'],
+        'razorpay_signature': request.form['razorpay_signature']
+    }
+    try:
+        razorpay_client.utility.verify_payment_signature(params)
+        booking = NurseBooking.query.get_or_404(booking_id)
+        if booking.patient_id != session['user_id']:
+            abort(403)
+        booking.status = 'paid'
+        db.session.commit()
+        flash('Payment successful! Nurse booked.')
+        patient = Patient.query.get(booking.patient_id)
+        nurse = booking.nurse
+        pdf_buffer = generate_nurse_bill_pdf(booking, nurse)
+        subject = "Nurse Booking Confirmed - Thank You!"
+        body = f"Dear {patient.name},\n\nThank you for booking the nurse. Please find the bill attached.\n\nBest regards,\nHospital Team"
+        send_email(patient.email, subject, body, pdf_buffer)
+    except Exception as e:
+        print(f"Payment verification failed: {e}")
+        flash('Payment verification failed.')
+    return redirect(url_for('patient_dashboard'))
+
+@app.route('/patient/download_nurse_bill/<int:booking_id>')
+def patient_download_nurse_bill(booking_id):
+    booking = NurseBooking.query.get_or_404(booking_id)
+    if booking.status != 'paid':
+        abort(403)
+    if 'role' in session and session['role'] == 'patient' and booking.patient_id != session['user_id']:
+        abort(403)
+    nurse = booking.nurse
+    buffer = generate_nurse_bill_pdf(booking, nurse)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"nurse_bill_{booking_id}.pdf", mimetype='application/pdf')
 
 @app.route('/patient/ambulance/<int:ambulance_id>', methods=['GET', 'POST'])
 def patient_ambulance(ambulance_id):
@@ -1215,7 +1958,8 @@ def patient_book_ambulance_normal(vehicle_id):
         patient_id=session['user_id'],
         use_type='normal',
         amount=vehicle.cost_price,
-        status='pending'
+        status='pending',
+        payment_status='unpaid'
     )
     db.session.add(new_booking)
     db.session.commit()
@@ -1236,7 +1980,8 @@ def patient_emergency_ambulance(vehicle_id):
             use_type='emergency',
             location_link=location_link,
             amount=vehicle.cost_price * 2,
-            status='accepted'
+            status='pending',
+            payment_status='unpaid'
         )
         db.session.add(new_booking)
         db.session.commit()
@@ -1248,7 +1993,7 @@ def patient_ambulance_bill(booking_id):
     if 'role' not in session or session['role'] != 'patient':
         return redirect(url_for('patient_login'))
     booking = AmbulanceBooking.query.get_or_404(booking_id)
-    if booking.patient_id != session['user_id'] or booking.status != 'accepted':
+    if booking.patient_id != session['user_id'] or booking.payment_status != 'unpaid':
         abort(403)
     vehicle = booking.vehicle
     return render_template('ambulance_bill.html', booking=booking, amount=booking.amount, vehicle=vehicle)
@@ -1258,7 +2003,7 @@ def patient_ambulance_pay(booking_id):
     if 'role' not in session or session['role'] != 'patient':
         return redirect(url_for('patient_login'))
     booking = AmbulanceBooking.query.get_or_404(booking_id)
-    if booking.patient_id != session['user_id'] or booking.status != 'accepted':
+    if booking.patient_id != session['user_id'] or booking.payment_status != 'unpaid':
         abort(403)
     amount = booking.amount
     order = razorpay_client.order.create({
@@ -1282,7 +2027,7 @@ def ambulance_payment_success(booking_id):
         booking = AmbulanceBooking.query.get_or_404(booking_id)
         if booking.patient_id != session['user_id']:
             abort(403)
-        booking.status = 'paid'
+        booking.payment_status = 'paid'
         db.session.commit()
         flash('Payment successful! Ambulance booked.')
         patient = Patient.query.get(booking.patient_id)
@@ -1293,9 +2038,12 @@ def ambulance_payment_success(booking_id):
         send_email(patient.email, subject, body, pdf_buffer)
         if booking.use_type == 'emergency':
             ambulance = Ambulance.query.get(booking.ambulance_id)
-            emergency_subject = "Emergency Ambulance Request"
-            emergency_body = f"Emergency request from {patient.name}. Go to this location link: {booking.location_link}. Please accept and share your live location."
+            emergency_subject = "Emergency Paid Booking Request"
+            emergency_body = f"Emergency paid request from {patient.name}. Location: {booking.location_link}. Please accept and share live location."
             send_email(ambulance.email, emergency_subject, emergency_body)
+            patient_subject = "Emergency Booking Paid - Waiting for Dispatch"
+            patient_body = f"Your emergency ambulance booking is paid. Waiting for the ambulance team to accept and dispatch."
+            send_email(patient.email, patient_subject, patient_body)
     except Exception as e:
         print(f"Payment verification failed: {e}")
         flash('Payment verification failed.')
@@ -1364,7 +2112,7 @@ def patient_book_appointment(doctor_id):
         if existing:
             flash('Slot not available')
             return redirect(url_for('patient_book_appointment', doctor_id=doctor_id))
-        new_appointment = Appointment(doctor_id=doctor_id, patient_id=session['user_id'], appointment_date=appointment_date, time_slot_id=time_slot_id, status='accepted')  # Directly accepted for simplicity
+        new_appointment = Appointment(doctor_id=doctor_id, patient_id=session['user_id'], appointment_date=appointment_date, time_slot_id=time_slot_id, status='accepted') # Directly accepted for simplicity
         db.session.add(new_appointment)
         db.session.commit()
         return redirect(url_for('patient_appointment_bill', appointment_id=new_appointment.id))
@@ -1382,7 +2130,7 @@ def patient_appointment_bill(appointment_id):
     return render_template('appointment_bill.html', appointment=appointment, amount=amount, time_slot=time_slot, doctor=appointment.doctor)
 
 @app.route('/patient/appointment_pay/<int:appointment_id>')
-def patient_appointment_pay(appointment_id):
+def patient_appoinment_pay(appointment_id):
     if 'role' not in session or session['role'] != 'patient':
         return redirect(url_for('patient_login'))
     appointment = Appointment.query.get_or_404(appointment_id)
@@ -1427,44 +2175,34 @@ def payment_success_appointment(appointment_id):
         flash('Payment verification failed.')
     return redirect(url_for('patient_dashboard'))
 
-@app.route('/patient/add_doctor_review/<int:doctor_id>', methods=['POST'])
-def patient_add_doctor_review(doctor_id):
-    if 'role' not in session or session['role'] != 'patient':
-        return redirect(url_for('patient_login'))
-    doctor = Doctor.query.get_or_404(doctor_id)
-    rating = int(request.form['rating'])
-    text = request.form['text']
-    new_review = DoctorReview(doctor_id=doctor_id, patient_id=session['user_id'], rating=rating, text=text)
-    db.session.add(new_review)
-    db.session.commit()
-    flash('Review added')
-    return redirect(url_for('patient_doctor', doctor_id=doctor_id))
-
-@app.route('/patient/edit_doctor_review/<int:review_id>', methods=['POST'])
-def patient_edit_doctor_review(review_id):
-    if 'role' not in session or session['role'] != 'patient':
-        return redirect(url_for('patient_login'))
-    review = DoctorReview.query.get_or_404(review_id)
-    if review.patient_id != session['user_id']:
+@app.route('/download_appointment_bill/<int:appointment_id>')
+def download_appointment_bill(appointment_id):
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.status != 'paid':
         abort(403)
-    review.rating = int(request.form['rating'])
-    review.text = request.form['text']
-    db.session.commit()
-    flash('Review updated')
-    return redirect(url_for('patient_doctor', doctor_id=review.doctor_id))
-
-@app.route('/patient/delete_doctor_review/<int:review_id>')
-def patient_delete_doctor_review(review_id):
-    if 'role' not in session or session['role'] != 'patient':
-        return redirect(url_for('patient_login'))
-    review = DoctorReview.query.get_or_404(review_id)
-    if review.patient_id != session['user_id']:
+    if 'role' in session:
+        if session['role'] == 'patient' and appointment.patient_id != session['user_id']:
+            abort(403)
+        elif session['role'] == 'doctor' and appointment.doctor_id != session['user_id']:
+            abort(403)
+    else:
         abort(403)
-    doctor_id = review.doctor_id
-    db.session.delete(review)
-    db.session.commit()
-    flash('Review deleted')
-    return redirect(url_for('patient_doctor', doctor_id=doctor_id))
+    time_slot = TimeSlot.query.get(appointment.time_slot_id)
+    buffer = generate_appointment_bill_pdf(appointment, time_slot)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"appointment_bill_{appointment_id}.pdf", mimetype='application/pdf')
+
+@app.route('/patient/download_ambulance_bill/<int:booking_id>')
+def patient_download_ambulance_bill(booking_id):
+    booking = AmbulanceBooking.query.get_or_404(booking_id)
+    if booking.status != 'paid':
+        abort(403)
+    if 'role' in session and session['role'] == 'patient' and booking.patient_id != session['user_id']:
+        abort(403)
+    vehicle = booking.vehicle
+    buffer = generate_ambulance_bill_pdf(booking, vehicle)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"ambulance_bill_{booking_id}.pdf", mimetype='application/pdf')
 
 @app.route('/patient/hospital/<int:hospital_id>/room/<int:room_id>')
 def patient_room(hospital_id, room_id):
@@ -1626,35 +2364,6 @@ def download_bill(booking_id):
     buffer = generate_booking_bill_pdf(booking, bed, room)
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f"bill_{booking_id}.pdf", mimetype='application/pdf')
-
-@app.route('/download_appointment_bill/<int:appointment_id>')
-def download_appointment_bill(appointment_id):
-    appointment = Appointment.query.get_or_404(appointment_id)
-    if appointment.status != 'paid':
-        abort(403)
-    if 'role' in session:
-        if session['role'] == 'patient' and appointment.patient_id != session['user_id']:
-            abort(403)
-        elif session['role'] == 'doctor' and appointment.doctor_id != session['user_id']:
-            abort(403)
-    else:
-        abort(403)
-    time_slot = TimeSlot.query.get(appointment.time_slot_id)
-    buffer = generate_appointment_bill_pdf(appointment, time_slot)
-    buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name=f"appointment_bill_{appointment_id}.pdf", mimetype='application/pdf')
-
-@app.route('/patient/download_ambulance_bill/<int:booking_id>')
-def patient_download_ambulance_bill(booking_id):
-    booking = AmbulanceBooking.query.get_or_404(booking_id)
-    if booking.status != 'paid':
-        abort(403)
-    if 'role' in session and session['role'] == 'patient' and booking.patient_id != session['user_id']:
-        abort(403)
-    vehicle = booking.vehicle
-    buffer = generate_ambulance_bill_pdf(booking, vehicle)
-    buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name=f"ambulance_bill_{booking_id}.pdf", mimetype='application/pdf')
 
 # Logout
 @app.route('/logout')

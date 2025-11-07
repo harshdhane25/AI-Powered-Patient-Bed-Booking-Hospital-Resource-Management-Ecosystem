@@ -308,8 +308,9 @@
                         {% for vehicle in vehicles %}
                             <li class="vehicle-item">
                                 {% if vehicle.image_path %}
-                                    <img src="/uploads/{{ vehicle.image_path.replace('uploads/', '') }}" alt="Vehicle Image" class="vehicle-image">
-                                {% endif %}
+                                    <img src="{{ url_for('uploaded_file', filename=(vehicle.image_path | replace('\\','/') | replace('uploads/',''))) }}"
+     alt="Vehicle Image" class="vehicle-image">
+{% endif %}
                                 <div class="vehicle-info">
                                     <div class="vehicle-name">
                                         {{ vehicle.name }}
