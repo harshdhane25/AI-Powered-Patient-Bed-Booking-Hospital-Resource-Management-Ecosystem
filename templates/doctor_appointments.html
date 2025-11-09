@@ -288,7 +288,7 @@
                     <div class="stat-label">Total Appointments</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${{ "%.2f"|format(appointments|sum(attribute='time_slot.price')) }}</div>
+                    <div class="stat-number">₹{{ "%.2f"|format(appointments|sum(attribute='time_slot.price')) }}</div>
                     <div class="stat-label">Total Revenue</div>
                 </div>
                 <div class="stat-card">
@@ -320,7 +320,7 @@
                         <td class="date-cell">{{ appointment.appointment_date.strftime('%Y-%m-%d') }}</td>
                         <td class="time-cell">{{ appointment.time_slot.start_time }}</td>
                         <td class="time-cell">{{ appointment.time_slot.end_time }}</td>
-                        <td class="price-cell">${{ "%.2f"|format(appointment.time_slot.price) }}</td>
+                        <td class="price-cell">₹{{ "%.2f"|format(appointment.time_slot.price) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

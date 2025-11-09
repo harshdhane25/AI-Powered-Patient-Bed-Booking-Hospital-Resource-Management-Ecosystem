@@ -160,7 +160,7 @@
                                 Patient: {{ booking.patient.name }}<br>
                                 Duration: {{ booking.duration_type }}<br>
                                 Location: {{ booking.location }}<br>
-                                Amount: ${{ booking.amount }}
+                                Amount: ₹{{ booking.amount }}
                             </div>
                             <div class="action-buttons">
                                 <a href="{{ url_for('nurse_accept_booking', booking_id=booking.id) }}" class="accept-btn">Accept</a>
@@ -184,7 +184,7 @@
                                 Patient: {{ booking.patient.name }}<br>
                                 Duration: {{ booking.duration_type }}<br>
                                 Location: {{ booking.location }}<br>
-                                Amount: ${{ booking.amount }}
+                                Amount: ₹{{ booking.amount }}
                             </div>
                         </li>
                     {% endfor %}
@@ -204,7 +204,7 @@
                                 Patient: {{ booking.patient.name }}<br>
                                 Duration: {{ booking.duration_type }}<br>
                                 Location: {{ booking.location }}<br>
-                                Amount: ${{ booking.amount }}
+                                Amount: ₹{{ booking.amount }}
                             </div>
                         </li>
                     {% endfor %}

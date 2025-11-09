@@ -229,7 +229,7 @@
             <h2><i class="fas fa-dollar-sign"></i> Rates</h2>
             {% for rate in rates %}
                 <div class="rate-item">
-                    {{ rate.rate_type.replace('_', ' ').title() }}: ${{ rate.price }}
+                    {{ rate.rate_type.replace('_', ' ').title() }}: ₹{{ rate.price }}
                 </div>
             {% endfor %}
         </div>

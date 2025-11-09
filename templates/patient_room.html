@@ -370,7 +370,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Price per Bed:</span>
-                        <span class="info-value">${{ room.price_per_bed }}/day</span>
+                        <span class="info-value">₹{{ room.price_per_bed }}/day</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Available Beds:</span>
@@ -429,13 +429,13 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Estimated Stay (Days)</label>
+                        <label>Advance Booking For Days</label>
                         <input type="number" id="estimated_stay" name="estimated_stay" required placeholder="Number of days" min="1">
                     </div>
                 </div>
                 
                 <div id="total_price_container">
-                    Total Price: $<span id="total_price">0.00</span>
+                    Total Price: ₹<span id="total_price">0.00</span>
                 </div>
                 
                 <button type="submit">📅 Send Booking Request</button>
@@ -525,7 +525,7 @@
                 return false;
             }
             
-            return confirm('Confirm booking request for ' + patientName + '?\nCheck-in: ' + checkInDate + '\nTotal price: $' + total);
+            return confirm('Confirm booking request for ' + patientName + '?\nCheck-in: ' + checkInDate + '\nTotal price: ₹' + total);
         }
         
         // Set minimum date to today for check-in

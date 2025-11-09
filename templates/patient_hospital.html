@@ -500,7 +500,7 @@
                                         <i class="fas fa-bed"></i> {{ room.name }}
                                     </div>
                                     <div class="resource-details">
-                                        Beds: {{ room.num_beds }} | Price: ${{ room.price_per_bed }} per bed <br> {{ room.description or '' }}
+                                        Beds: {{ room.num_beds }} | Price: ₹{{ room.price_per_bed }} per bed <br> {{ room.description or '' }}
                                     </div>
                                 </div>
                                 <a href="{{ url_for('patient_room', hospital_id=hospital.id, room_id=room.id) }}" class="contact-btn call-btn">

@@ -273,7 +273,7 @@
                 <h3>💰 Amount Breakdown</h3>
                 <div class="calculation-item">
                     <span class="bill-label">Price per Bed per Day</span>
-                    <span class="bill-value">${{ room.price_per_bed }}</span>
+                    <span class="bill-value">₹{{ room.price_per_bed }}</span>
                 </div>
                
                 <div class="calculation-item">
@@ -283,12 +283,12 @@
                
                 <div class="calculation-item">
                     <span class="bill-label">Subtotal</span>
-                    <span class="bill-value">${{ room.price_per_bed * booking.estimated_stay }}</span>
+                    <span class="bill-value">₹{{ room.price_per_bed * booking.estimated_stay }}</span>
                 </div>
                
                 <div class="calculation-total">
                     <span class="bill-label">Total Amount</span>
-                    <span class="bill-value">${{ amount }}</span>
+                    <span class="bill-value">₹{{ amount }}</span>
                 </div>
             </div>
            

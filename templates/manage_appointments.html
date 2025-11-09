@@ -325,7 +325,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="price">Price ($)</label>
+                            <label for="price">Price (₹)</label>
                             <input type="number" id="price" name="price" placeholder="100" required min="0">
                         </div>
                         
@@ -357,7 +357,7 @@
                         <tr>
                             <td class="time-cell">{{ slot.start_time }}</td>
                             <td class="time-cell">{{ slot.end_time }}</td>
-                            <td class="price-cell">${{ slot.price }}</td>
+                            <td class="price-cell">₹{{ slot.price }}</td>
                             <td class="action-cell">
                                 <a href="{{ url_for('doctor_delete_slot', slot_id=slot.id) }}" class="delete-btn" 
                                    onclick="return confirm('Are you sure you want to delete this time slot?')">

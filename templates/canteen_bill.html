@@ -16,11 +16,11 @@
       <div class="card-body">
         <p><strong>Patient:</strong> {{ order.patient.name }}</p>
         <p><strong>Ordered At:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-        {% if order.room_id %}
-          <p><strong>Delivery Room:</strong> {{ order.room.name }}</p>
+        {% if room %}
+          <p><strong>Delivery Room:</strong> {{ room.name }}</p>
         {% endif %}
-        {% if order.bed_id %}
-          <p><strong>Delivery Bed:</strong> {{ order.bed.bed_number }}</p>
+        {% if bed %}
+          <p><strong>Delivery Bed:</strong> {{ bed.bed_number }}</p>
         {% endif %}
         <table class="table table-bordered">
           <thead>
@@ -36,13 +36,13 @@
               <tr>
                 <td>{{ item.item.name }}</td>
                 <td>{{ item.quantity }}</td>
-                <td>${{ "%.2f"|format(item.item.price) }}</td>
-                <td>${{ "%.2f"|format(item.item.price * item.quantity) }}</td>
+                <td>₹{{ "%.2f"|format(item.item.price) }}</td>
+                <td>₹{{ "%.2f"|format(item.item.price * item.quantity) }}</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-        <h4 class="text-end">Total: ${{ "%.2f"|format(total_amount) }}</h4>
+        <h4 class="text-end">Total: ₹{{ "%.2f"|format(total_amount) }}</h4>
         <div class="text-center">
           <a href="{{ url_for('patient_canteen_pay', order_id=order.id) }}" class="btn btn-success btn-lg">Pay Now</a>
         </div>

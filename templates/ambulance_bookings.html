@@ -297,7 +297,7 @@
                                         {{ booking.patient.name }} ({{ booking.use_type }})
                                     </div>
                                     <div class="booking-details">
-                                        Vehicle: {{ booking.vehicle.name }} | Amount: ${{ booking.amount }}
+                                        Vehicle: {{ booking.vehicle.name }} | Amount: ₹{{ booking.amount }}
                                         {% if booking.live_location_link %}
                                             <br>Your Live Location: {{ booking.live_location_link }}
                                         {% endif %}
@@ -331,7 +331,7 @@
                                         {{ booking.patient.name }} ({{ booking.use_type }})
                                     </div>
                                     <div class="booking-details">
-                                        Vehicle: {{ booking.vehicle.name }} | Paid: ${{ booking.amount }} | Date: {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        Vehicle: {{ booking.vehicle.name }} | Paid: ₹{{ booking.amount }} | Date: {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
                                         {% if booking.location_link %}
                                             <br>Patient Location: {{ booking.location_link }}
                                         {% endif %}

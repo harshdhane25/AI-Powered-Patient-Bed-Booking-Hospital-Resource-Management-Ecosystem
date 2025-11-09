@@ -263,7 +263,7 @@
                         <option value="">Select a time slot</option>
                         {% for slot in time_slots %}
                         <option value="{{ slot.id }}" data-price="{{ slot.price }}">
-                            {{ slot.start_time }} - {{ slot.end_time }} (${{ slot.price }})
+                            {{ slot.start_time }} - {{ slot.end_time }} (₹{{ slot.price }})
                         </option>
                         {% endfor %}
                     </select>
@@ -297,7 +297,7 @@
                 const selectedOption = this.options[this.selectedIndex];
                 const price = selectedOption.getAttribute('data-price');
                 selectedTime.textContent = selectedOption.textContent.split(' (')[0];
-                selectedPrice.textContent = '$' + price;
+                selectedPrice.textContent = '₹' + price;
                 selectedSlotInfo.style.display = 'block';
             } else {
                 selectedSlotInfo.style.display = 'none';

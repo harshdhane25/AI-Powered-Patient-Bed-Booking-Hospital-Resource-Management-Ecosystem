@@ -10,6 +10,7 @@
     .status-accepted { background-color: #d1ecf1; }
     .status-paid { background-color: #d4edda; }
     .status-preparing { background-color: #cce5ff; }
+    .status-out_for_delivery { background-color: #f8d7da; }
   </style>
 </head>
 <body>
@@ -17,8 +18,10 @@
     <h1 class="mb-4 text-center">Update Order Statuses</h1>
     <a href="{{ url_for('canteen_dashboard') }}" class="btn btn-secondary mb-4">Back to Dashboard</a>
     <a href="{{ url_for('canteen_orders') }}" class="btn btn-info mb-4">View All Orders</a>
+
     {% if orders %}
-      {% for order in orders %}
+      {% for order_data in orders %}
+        {% set order = order_data.order %}
         <div class="card mb-4 shadow-sm">
           <div class="card-header">
             <h5>Order #{{ order.id }} - {{ order.patient.name }}</h5>
@@ -26,19 +29,22 @@
           </div>
           <div class="card-body">
             <p><strong>Ordered At:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-            {% if order.room_id and order.bed_id %}
-              <p><strong>Location:</strong> Room {{ order.room.name }} - Bed {{ order.bed.bed_number }}</p>
+
+            {% if order_data.room and order_data.bed %}
+              <p><strong>Location:</strong> Room {{ order_data.room.name }} - Bed {{ order_data.bed.bed_number }}</p>
             {% else %}
               <p><strong>Location:</strong> Pickup at Canteen</p>
             {% endif %}
+
             <div class="mb-3">
-              {% set total = 0 %}
+              {% set total = namespace(value=0) %}
               {% for item in order.items %}
-                <p>{{ item.item.name }} x {{ item.quantity }} - ${{ "%.2f"|format(item.item.price * item.quantity) }}</p>
-                {% set total = total + (item.item.price * item.quantity) %}
+                {% set total.value = total.value + (item.item.price * item.quantity) %}
+                <p>{{ item.item.name }} x {{ item.quantity }} - ₹{{ "%.2f"|format(item.item.price * item.quantity) }}</p>
               {% endfor %}
-              <strong>Total: ${{ "%.2f"|format(total) }}</strong>
+              <strong>Total: ₹{{ "%.2f"|format(total.value) }}</strong>
             </div>
+
             <a href="{{ url_for('canteen_update_status', order_id=order.id) }}" class="btn btn-primary">Update Status</a>
           </div>
         </div>

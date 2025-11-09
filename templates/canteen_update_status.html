@@ -16,18 +16,18 @@
                 <p><strong>Patient:</strong> {{ order.patient.name }}</p>
                 <p><strong>Current Status:</strong> {{ order.status }}</p>
 
-                {# ✅ Fixed total calculation — no more UndefinedError #}
-                {% set total = 0 %}
+                {# ✅ Reliable total calculation using a namespace #}
+                {% set total = namespace(value=0) %}
                 {% for item in order.items %}
-                    {% set total = total + (item.item.price * item.quantity) %}
+                    {% set total.value = total.value + (item.item.price * item.quantity) %}
                 {% endfor %}
-                <p><strong>Total:</strong> ${{ "%.2f"|format(total) }}</p>
+                <p><strong>Total:</strong> ₹{{ "%.2f"|format(total.value) }}</p>
 
-                {% if order.room_id %}
-                    <p><strong>Delivery Room:</strong> {{ order.room.name }}</p>
+                {% if room %}
+                    <p><strong>Delivery Room:</strong> {{ room.name }}</p>
                 {% endif %}
-                {% if order.bed_id %}
-                    <p><strong>Delivery Bed:</strong> {{ order.bed.bed_number }}</p>
+                {% if bed %}
+                    <p><strong>Delivery Bed:</strong> {{ bed.bed_number }}</p>
                 {% endif %}
 
                 <form method="POST">

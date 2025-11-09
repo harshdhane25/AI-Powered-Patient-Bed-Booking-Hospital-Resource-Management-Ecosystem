@@ -1,3 +1,4 @@
+# app.py (Full updated code with multi-role session support)
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort, send_file, make_response, send_from_directory, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -69,9 +70,9 @@ def generate_booking_bill_pdf(booking, bed, room):
     y -= 20
     p.drawString(100, y, f"Bed: {bed.bed_number}")
     y -= 20
-    p.drawString(100, y, f"Price per day: ${room.price_per_bed}")
+    p.drawString(100, y, f"Price per day: ₹{room.price_per_bed}")
     y -= 20
-    p.drawString(100, y, f"Total Amount: ${room.price_per_bed * booking.estimated_stay}")
+    p.drawString(100, y, f"Total Amount: ₹{room.price_per_bed * booking.estimated_stay}")
     p.save()
     return buffer
 
@@ -88,7 +89,7 @@ def generate_appointment_bill_pdf(appointment, time_slot):
     y -= 20
     p.drawString(100, y, f"Time Slot: {time_slot.start_time} - {time_slot.end_time}")
     y -= 20
-    p.drawString(100, y, f"Amount: ${time_slot.price}")
+    p.drawString(100, y, f"Amount: ₹{time_slot.price}")
     p.save()
     return buffer
 
@@ -108,7 +109,7 @@ def generate_ambulance_bill_pdf(booking, vehicle):
         y -= 20
         p.drawString(100, y, f"Location Link: {booking.location_link}")
     y -= 20
-    p.drawString(100, y, f"Amount: ${booking.amount}")
+    p.drawString(100, y, f"Amount: ₹{booking.amount}")
     p.save()
     return buffer
 
@@ -125,7 +126,7 @@ def generate_nurse_bill_pdf(booking, nurse):
     y -= 20
     p.drawString(100, y, f"Location: {booking.location}")
     y -= 20
-    p.drawString(100, y, f"Amount: ${booking.amount}")
+    p.drawString(100, y, f"Amount: ₹{booking.amount}")
     p.save()
     return buffer
 
@@ -150,10 +151,10 @@ def generate_canteen_bill_pdf(order):
     y -= 20
     total = 0
     for item in order.items:
-        p.drawString(100, y, f"{item.item.name} x {item.quantity}: ${item.item.price * item.quantity}")
+        p.drawString(100, y, f"{item.item.name} x {item.quantity}: ₹{item.item.price * item.quantity}")
         y -= 20
         total += item.item.price * item.quantity
-    p.drawString(100, y, f"Total Amount: ${total}")
+    p.drawString(100, y, f"Total Amount: ₹{total}")
     p.save()
     return buffer
 
@@ -334,10 +335,6 @@ class CanteenOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     items = db.relationship('CanteenOrderItem', backref='order', lazy=True, cascade="all, delete-orphan")
 
-    # Add these relationships:
-    room = db.relationship('Room', backref='orders', lazy=True)
-    bed = db.relationship('Bed', backref='orders', lazy=True)
-
 class CanteenOrderItem(db.Model):
     __tablename__ = 'canteen_order_item'
     id = db.Column(db.Integer, primary_key=True)
@@ -427,12 +424,77 @@ with app.app_context():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# ---------------------------
+# --- SESSION MULTI-ROLE FIX
+# ---------------------------
+
+def set_active_role(role, user_id):
+    """
+    Save the active role in session['role'] and session['user_id'],
+    and also keep a per-role mapping in session['roles'] so multiple
+    roles can remain logged-in in the same browser session.
+    """
+    session['user_id'] = user_id
+    session['role'] = role
+    roles = session.get('roles', {})
+    roles[role] = user_id
+    session['roles'] = roles
+    session.modified = True
+
+@app.before_request
+def restore_role_from_roles_map():
+    """
+    Before every request, if the requested view belongs to a particular
+    role (based on function name prefix), ensure session['role'] and
+    session['user_id'] are set to that role if possible. This restores
+    the correct identity when switching between tabs for different roles.
+    """
+    endpoint = request.endpoint or ''
+    # endpoints for static files will be 'static' - do nothing
+    if endpoint == 'static' or not endpoint:
+        return
+
+    # map endpoint prefixes -> role names
+    role_prefixes = {
+        'admin_': 'admin',
+        'doctor_': 'doctor',
+        'ambulance_': 'ambulance',
+        'nurse_': 'nurse',
+        'canteen_': 'canteen',
+        'patient_': 'patient',
+        # some endpoints are named exactly 'admin_dashboard' etc, so prefix covers them
+    }
+
+    # find desired role based on endpoint prefix
+    desired_role = None
+    for prefix, role_name in role_prefixes.items():
+        if endpoint.startswith(prefix):
+            desired_role = role_name
+            break
+
+    # If desired role is identified and session role isn't matching,
+    # but we have that role stored in session['roles'], restore it.
+    if desired_role:
+        current_role = session.get('role')
+        if current_role != desired_role:
+            roles_map = session.get('roles', {})
+            role_user_id = roles_map.get(desired_role)
+            if role_user_id:
+                # restore this role as active
+                session['user_id'] = role_user_id
+                session['role'] = desired_role
+                session.modified = True
+
+# ---------------------------
+# --- End of session fix
+# ---------------------------
+
 # Routes (all existing + updated for canteen)
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Hospital Admin Routes (unchanged)
+# Hospital Admin Routes (unchanged in logic, only login uses set_active_role)
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -440,8 +502,10 @@ def admin_login():
         password = request.form['password']
         hospital = Hospital.query.filter_by(username=username).first()
         if hospital and check_password_hash(hospital.password, password):
-            session['user_id'] = hospital.id
-            session['role'] = 'admin'
+            # Instead of directly setting session['user_id'] and session['role'],
+            # store the active role using set_active_role so multiple roles can
+            # remain logged in in the same browser.
+            set_active_role('admin', hospital.id)
             return redirect(url_for('admin_dashboard'))
         flash('Invalid username or password')
     return render_template('admin_login.html')
@@ -537,7 +601,7 @@ def admin_remove_doctor(doctor_id):
     flash('Doctor removed')
     return redirect(url_for('admin_doctors'))
 
-# Ambulance Admin Routes (unchanged)
+# Ambulance Admin Routes (unchanged, login updated to set_active_role)
 @app.route('/admin/ambulances', methods=['GET', 'POST'])
 def admin_ambulances():
     if 'role' not in session or session['role'] != 'admin':
@@ -593,7 +657,7 @@ def admin_remove_ambulance(ambulance_id):
     flash('Ambulance removed')
     return redirect(url_for('admin_ambulances'))
 
-# Nurse (unchanged)
+# Nurse (unchanged, login updated to set_active_role)
 @app.route('/admin/nurses', methods=['GET', 'POST'])
 def admin_nurses():
     if 'role' not in session or session['role'] != 'admin':
@@ -649,7 +713,7 @@ def admin_remove_nurse(nurse_id):
     flash('Nurse removed')
     return redirect(url_for('admin_nurses'))
 
-# Canteen (updated)
+# Canteen (updated - login uses set_active_role)
 @app.route('/admin/canteens', methods=['GET', 'POST'])
 def admin_canteens():
     if 'role' not in session or session['role'] != 'admin':
@@ -851,7 +915,7 @@ def admin_delete_review(review_id):
     flash('Review deleted')
     return redirect(url_for('admin_edit_room', room_id=room.id))
 
-# Doctor Routes (unchanged)
+# Doctor Routes (unchanged in logic; login updated to set_active_role)
 @app.route('/doctor/login', methods=['GET', 'POST'])
 def doctor_login():
     if request.method == 'POST':
@@ -859,8 +923,7 @@ def doctor_login():
         password = request.form['password']
         doctor = Doctor.query.filter_by(username=username).first()
         if doctor and check_password_hash(doctor.password, password):
-            session['user_id'] = doctor.id
-            session['role'] = 'doctor'
+            set_active_role('doctor', doctor.id)
             return redirect(url_for('doctor_dashboard'))
         flash('Invalid username or password')
     return render_template('doctor_login.html')
@@ -1001,7 +1064,7 @@ def doctor_delete_review(review_id):
     flash('Review deleted')
     return redirect(url_for('doctor_manage_reviews'))
 
-# Ambulance Routes (unchanged)
+# Ambulance Routes (login uses set_active_role)
 @app.route('/ambulance/login', methods=['GET', 'POST'])
 def ambulance_login():
     if request.method == 'POST':
@@ -1009,8 +1072,7 @@ def ambulance_login():
         password = request.form['password']
         ambulance = Ambulance.query.filter_by(username=username).first()
         if ambulance and check_password_hash(ambulance.password, password):
-            session['user_id'] = ambulance.id
-            session['role'] = 'ambulance'
+            set_active_role('ambulance', ambulance.id)
             return redirect(url_for('ambulance_dashboard'))
         flash('Invalid username or password')
     return render_template('ambulance_login.html')
@@ -1192,7 +1254,7 @@ def ambulance_delete_review(review_id):
     flash('Review deleted')
     return redirect(url_for('ambulance_reviews'))
 
-# Nurse Routes (unchanged)
+# Nurse Routes (login uses set_active_role)
 @app.route('/nurse/login', methods=['GET', 'POST'])
 def nurse_login():
     if request.method == 'POST':
@@ -1200,8 +1262,7 @@ def nurse_login():
         password = request.form['password']
         nurse = Nurse.query.filter_by(username=username).first()
         if nurse and check_password_hash(nurse.password, password):
-            session['user_id'] = nurse.id
-            session['role'] = 'nurse'
+            set_active_role('nurse', nurse.id)
             return redirect(url_for('nurse_dashboard'))
         flash('Invalid username or password')
     return render_template('nurse_login.html')
@@ -1337,6 +1398,49 @@ def nurse_delete_review(review_id):
     flash('Review deleted')
     return redirect(url_for('nurse_manage_reviews'))
 
+# Add these routes after the existing patient_edit_nurse_review and patient_delete_nurse_review routes
+# (around line 1400-1500, after the nurse review routes and before canteen routes)
+
+@app.route('/patient/add_doctor_review/<int:doctor_id>', methods=['POST'])
+def patient_add_doctor_review(doctor_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    doctor = Doctor.query.get_or_404(doctor_id)
+    rating = int(request.form['rating'])
+    text = request.form.get('text')
+    new_review = DoctorReview(doctor_id=doctor_id, patient_id=session['user_id'], rating=rating, text=text)
+    db.session.add(new_review)
+    db.session.commit()
+    flash('Review added')
+    return redirect(url_for('patient_doctor', doctor_id=doctor_id))
+
+@app.route('/patient/edit_doctor_review/<int:review_id>', methods=['POST'])
+def patient_edit_doctor_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = DoctorReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    review.rating = int(request.form['rating'])
+    review.text = request.form.get('text')
+    db.session.commit()
+    flash('Review updated')
+    return redirect(url_for('patient_doctor', doctor_id=review.doctor_id))
+
+@app.route('/patient/delete_doctor_review/<int:review_id>')
+def patient_delete_doctor_review(review_id):
+    if 'role' not in session or session['role'] != 'patient':
+        return redirect(url_for('patient_login'))
+    review = DoctorReview.query.get_or_404(review_id)
+    if review.patient_id != session['user_id']:
+        abort(403)
+    doctor_id = review.doctor_id
+    db.session.delete(review)
+    db.session.commit()
+    flash('Review deleted')
+    return redirect(url_for('patient_doctor', doctor_id=doctor_id))
+
+
 # Canteen Routes (updated with new features and status emails)
 @app.route('/canteen/login', methods=['GET', 'POST'])
 def canteen_login():
@@ -1345,8 +1449,7 @@ def canteen_login():
         password = request.form['password']
         canteen = Canteen.query.filter_by(username=username).first()
         if canteen and check_password_hash(canteen.password, password):
-            session['user_id'] = canteen.id
-            session['role'] = 'canteen'
+            set_active_role('canteen', canteen.id)
             return redirect(url_for('canteen_dashboard'))
         flash('Invalid username or password')
     return render_template('canteen_login.html')
@@ -1429,13 +1532,38 @@ def canteen_orders():
         return redirect(url_for('canteen_login'))
     canteen_id = session['user_id']
     orders = CanteenOrder.query.filter_by(canteen_id=canteen_id).all()
-    pending_orders = [o for o in orders if o.status == 'pending']
-    accepted_orders = [o for o in orders if o.status == 'accepted']
-    paid_orders = [o for o in orders if o.status == 'paid']
-    delivered_orders = [o for o in orders if o.status == 'delivered']
-    preparing_orders = [o for o in orders if o.status == 'preparing']
-    out_for_delivery_orders = [o for o in orders if o.status == 'out_for_delivery']
-    return render_template('canteen_orders.html', pending_orders=pending_orders, accepted_orders=accepted_orders, paid_orders=paid_orders, delivered_orders=delivered_orders, preparing_orders=preparing_orders, out_for_delivery_orders=out_for_delivery_orders)
+    
+    # Pre-load room and bed data for all orders
+    orders_with_details = []
+    for order in orders:
+        order_dict = {
+            'order': order,
+            'room': None,
+            'bed': None
+        }
+        if order.room_id:
+            order_dict['room'] = Room.query.get(order.room_id)
+        if order.bed_id:
+            order_dict['bed'] = Bed.query.get(order.bed_id)
+        orders_with_details.append(order_dict)
+    
+    # Filter orders by status with their details
+    pending_orders = [od for od in orders_with_details if od['order'].status == 'pending']
+    accepted_orders = [od for od in orders_with_details if od['order'].status == 'accepted']
+    paid_orders = [od for od in orders_with_details if od['order'].status == 'paid']
+    delivered_orders = [od for od in orders_with_details if od['order'].status == 'delivered']
+    preparing_orders = [od for od in orders_with_details if od['order'].status == 'preparing']
+    out_for_delivery_orders = [od for od in orders_with_details if od['order'].status == 'out_for_delivery']
+    
+    return render_template('canteen_orders.html', 
+                         pending_orders=pending_orders, 
+                         accepted_orders=accepted_orders, 
+                         paid_orders=paid_orders, 
+                         delivered_orders=delivered_orders, 
+                         preparing_orders=preparing_orders, 
+                         out_for_delivery_orders=out_for_delivery_orders)
+
+                         
 
 @app.route('/canteen/accept_order/<int:order_id>')
 def canteen_accept_order(order_id):
@@ -1449,9 +1577,9 @@ def canteen_accept_order(order_id):
     patient = order.patient
     total_amount = sum(item.item.price * item.quantity for item in order.items)
     subject = "Your Canteen Order is Accepted"
-    body = f"Dear {patient.name},\n\nYour canteen order has been accepted. Total: ${total_amount}\nItems:\n"
+    body = f"Dear {patient.name},\n\nYour canteen order has been accepted. Total: ₹{total_amount}\nItems:\n"
     for item in order.items:
-        body += f"- {item.item.name} x {item.quantity} = ${item.item.price * item.quantity}\n"
+        body += f"- {item.item.name} x {item.quantity} = ₹{item.item.price * item.quantity}\n"
     body += "\nPlease pay the bill to confirm.\n\nBest regards,\nCanteen Team"
     send_email(patient.email, subject, body)
     flash('Order accepted')
@@ -1480,6 +1608,15 @@ def canteen_update_status(order_id):
     order = CanteenOrder.query.get_or_404(order_id)
     if order.canteen_id != session['user_id']:
         abort(403)
+    
+    # Pre-load room and bed data for this order
+    room = None
+    bed = None
+    if order.room_id:
+        room = Room.query.get(order.room_id)
+    if order.bed_id:
+        bed = Bed.query.get(order.bed_id)
+    
     if request.method == 'POST':
         new_status = request.form['status']
         patient = order.patient
@@ -1487,22 +1624,23 @@ def canteen_update_status(order_id):
         if new_status == 'preparing':
             order.status = 'preparing'
             subject = "Your Order is Being Prepared"
-            body = f"Dear {patient.name},\n\nYour order is going to preparing. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            body = f"Dear {patient.name},\n\nYour order is being prepared. Total: ₹{total_amount}\n\nBest regards,\nCanteen Team"
             send_email(patient.email, subject, body)
         elif new_status == 'out_for_delivery':
             order.status = 'out_for_delivery'
             subject = "Your Food is Out for Delivery"
-            body = f"Dear {patient.name},\n\nYour food order is out for delivery. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            body = f"Dear {patient.name},\n\nYour food order is out for delivery. Total: ₹{total_amount}\n\nBest regards,\nCanteen Team"
             send_email(patient.email, subject, body)
         elif new_status == 'delivered':
             order.status = 'delivered'
             subject = "Your Order is Delivered Successfully"
-            body = f"Dear {patient.name},\n\nYour order is delivered successfully. Total: ${total_amount}\n\nBest regards,\nCanteen Team"
+            body = f"Dear {patient.name},\n\nYour order is delivered successfully. Total: ₹{total_amount}\n\nBest regards,\nCanteen Team"
             send_email(patient.email, subject, body)
         db.session.commit()
         flash('Status updated')
         return redirect(url_for('canteen_orders'))
-    return render_template('canteen_update_status.html', order=order)
+    
+    return render_template('canteen_update_status.html', order=order, room=room, bed=bed)
     
     
 @app.route('/canteen/update_statuses')
@@ -1511,9 +1649,24 @@ def canteen_update_statuses():
         return redirect(url_for('canteen_login'))
     canteen_id = session['user_id']
     orders = CanteenOrder.query.filter_by(canteen_id=canteen_id).filter(
-        CanteenOrder.status.in_(['accepted', 'paid', 'preparing'])
+        CanteenOrder.status.in_(['accepted', 'paid', 'preparing', 'out_for_delivery'])
     ).order_by(CanteenOrder.created_at.desc()).all()
-    return render_template('canteen_update_statuses.html', orders=orders)
+    
+    # Pre-load room and bed data for all orders
+    orders_with_details = []
+    for order in orders:
+        order_dict = {
+            'order': order,
+            'room': None,
+            'bed': None
+        }
+        if order.room_id:
+            order_dict['room'] = Room.query.get(order.room_id)
+        if order.bed_id:
+            order_dict['bed'] = Bed.query.get(order.bed_id)
+        orders_with_details.append(order_dict)
+    
+    return render_template('canteen_update_statuses.html', orders=orders_with_details)
     
 
 @app.route('/canteen/manage_reviews')
@@ -1524,7 +1677,7 @@ def canteen_manage_reviews():
     reviews = CanteenReview.query.filter_by(canteen_id=canteen_id).order_by(CanteenReview.created_at.desc()).all()
     return render_template('canteen_manage_reviews.html', reviews=reviews)
 
-@app.route('/canteen/delete_review/<int:review_id>')
+@app.route('/canteen/delete_review/<int:review_id>', methods=['POST'])
 def canteen_delete_review(review_id):
     if 'role' not in session or session['role'] != 'canteen':
         return redirect(url_for('canteen_login'))
@@ -1535,7 +1688,7 @@ def canteen_delete_review(review_id):
     db.session.commit()
     flash('Review deleted')
     return redirect(url_for('canteen_manage_reviews'))
-
+    
 # Patient Routes (updated with canteen features)
 @app.route('/patient/login', methods=['GET', 'POST'])
 def patient_login():
@@ -1544,8 +1697,7 @@ def patient_login():
         password = request.form['password']
         patient = Patient.query.filter_by(username=username).first()
         if patient and check_password_hash(patient.password, password):
-            session['user_id'] = patient.id
-            session['role'] = 'patient'
+            set_active_role('patient', patient.id)
             return redirect(url_for('patient_dashboard'))
         flash('Invalid username or password')
     return render_template('patient_login.html')
@@ -1698,9 +1850,19 @@ def patient_canteen_bill(order_id):
     order = CanteenOrder.query.get_or_404(order_id)
     if order.patient_id != session['user_id'] or order.status != 'accepted':
         abort(403)
+    
+    # Pre-load room and bed data
+    room = None
+    bed = None
+    if order.room_id:
+        room = Room.query.get(order.room_id)
+    if order.bed_id:
+        bed = Bed.query.get(order.bed_id)
+    
     total_amount = sum(item.item.price * item.quantity for item in order.items)
-    return render_template('canteen_bill.html', order=order, total_amount=total_amount)
-
+    return render_template('canteen_bill.html', order=order, total_amount=total_amount, room=room, bed=bed)
+    
+    
 @app.route('/patient/canteen_pay/<int:order_id>')
 def patient_canteen_pay(order_id):
     if 'role' not in session or session['role'] != 'patient':

@@ -316,7 +316,7 @@
                                         {{ vehicle.name }}
                                     </div>
                                     <div class="vehicle-details">
-                                        Numberplate: {{ vehicle.numberplate }} | Cost: ${{ vehicle.cost_price }} | Support: {{ vehicle.medical_support or 'Standard' }}
+                                        Numberplate: {{ vehicle.numberplate }} | Cost: ₹{{ vehicle.cost_price }} | Support: {{ vehicle.medical_support or 'Standard' }}
                                     </div>
                                 </div>
                                 <div class="vehicle-actions">
@@ -355,7 +355,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="cost_price">Cost Price ($)</label>
+                        <label for="cost_price">Cost Price (₹)</label>
                         <input type="number" step="0.01" id="cost_price" name="cost_price" placeholder="Enter cost price" required>
                     </div>
                     

@@ -10,7 +10,7 @@
 <body>
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
         <h1>Emergency Ambulance Payment</h1>
-        <p>Amount: ${{ amount }}</p>
+        <p>Amount: ₹{{ amount }}</p>
         <p>Patient: {{ booking.patient_name }}</p>
         <p>Location: {{ booking.location_shared }}</p>
         <form action="{{ url_for('ambulance_payment_success', booking_id=booking_id) }}" method="POST">
