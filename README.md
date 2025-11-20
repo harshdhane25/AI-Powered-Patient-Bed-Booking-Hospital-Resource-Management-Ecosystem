@@ -1,6 +1,5 @@
 # AI-Powered Patient Bed Booking & Hospital Resource Management Ecosystem
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.3.3-green)](https://flask.palletsprojects.com/)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Hugging%20Face-orange)](https://harshdhane-medibook.hf.space/)
@@ -128,9 +127,6 @@ Refer to `architecture_diagram.png` in the repo/docs for a visual overview.
 5. Open a Pull Request.
 
 Feedback welcome! Issues/PRs encouraged.
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Contact
 - **Author**: Harshvardhan Dhane
