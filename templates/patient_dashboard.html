@@ -11,46 +11,47 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-  
+ 
         body {
             background-color: #f0f8ff;
             color: #333;
             line-height: 1.6;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
-  
+ 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+            flex: 1;
         }
-  
+ 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 25px 40px;
+            padding: 20px 30px;
             background: linear-gradient(135deg, #41b883 0%, #329268 100%);
             color: white;
             border-radius: 10px;
             margin-bottom: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-  
+ 
         .header-content h1 {
             font-size: 2rem;
             margin-bottom: 5px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            color: white;
+            gap: 10px;
         }
-  
+ 
         .header-content p {
             opacity: 0.9;
-            font-size: 0.95rem;
         }
-
+ 
         .header-actions {
             display: flex;
             gap: 15px;
@@ -73,7 +74,6 @@
 
         .notification-bell:hover {
             background-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px);
         }
 
         .notification-badge {
@@ -89,11 +89,11 @@
             min-width: 20px;
             text-align: center;
         }
-  
+ 
         .logout-btn {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 12px 25px;
+            padding: 10px 20px;
             border-radius: 5px;
             text-decoration: none;
             font-weight: 600;
@@ -102,54 +102,46 @@
             align-items: center;
             gap: 8px;
         }
-  
+ 
         .logout-btn:hover {
             background-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px);
         }
-  
+ 
         .dashboard-content {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 25px;
+            gap: 30px;
             margin-bottom: 30px;
         }
-  
+ 
         .card {
             background-color: white;
             border-radius: 10px;
-            padding: 30px;
+            padding: 25px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-  
+ 
         .patient-info-card {
             border-top: 5px solid #41b883;
         }
-  
+ 
         .hospitals-card {
             border-top: 5px solid #ff9f43;
-            grid-column: 1 / -1;
         }
-  
+ 
         .alert {
-            padding: 20px;
+            padding: 15px;
             border-radius: 5px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-  
+ 
         .alert ul {
             list-style-type: none;
         }
-  
+ 
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -158,55 +150,47 @@
         }
 
         .info-item {
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            margin-bottom: 0;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
-
-        .info-item:hover {
-            transform: translateX(5px);
-            background-color: #f0f0f0;
-        }
-  
+ 
         .info-label {
             font-weight: 600;
             color: #555;
             display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 5px;
         }
-  
+ 
         .info-value {
             color: #333;
-            font-size: 1.05rem;
         }
-  
+ 
         .status-indicator {
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 8px 15px;
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
+            margin-left: 10px;
+        }
+ 
+        .status-active {
             background-color: #e8f5e9;
             color: #41b883;
         }
-  
+ 
         h2 {
             color: #41b883;
-            margin-bottom: 25px;
-            font-size: 1.6rem;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
-  
+ 
         .hospitals-card h2 {
             color: #ff9f43;
         }
@@ -220,7 +204,7 @@
         .edit-info-btn {
             background-color: #2c7fb8;
             color: white;
-            padding: 14px 28px;
+            padding: 12px 20px;
             border-radius: 5px;
             border: none;
             font-size: 1rem;
@@ -234,7 +218,6 @@
 
         .edit-info-btn:hover {
             background-color: #1d5f8a;
-            transform: translateY(-3px);
         }
 
         /* Search Bar Styles */
@@ -245,7 +228,7 @@
 
         .search-bar {
             width: 100%;
-            padding: 15px 50px 15px 20px;
+            padding: 12px 20px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
@@ -267,73 +250,71 @@
             color: #999;
             font-size: 1.2rem;
         }
-  
+ 
         .hospitals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
-  
+ 
         .hospital-item {
             background-color: #f9f9f9;
             border-radius: 8px;
-            padding: 25px;
+            padding: 20px;
             transition: all 0.3s ease;
             border-left: 4px solid #ff9f43;
-        }
-  
-        .hospital-item:hover {
-            transform: translateY(-5px);
-            background-color: #f0f0f0;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .hospital-item.hidden {
             display: none;
         }
-  
+ 
+        .hospital-item:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+ 
         .hospital-name {
-            font-weight: 700;
+            font-weight: 600;
             color: #ff9f43;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.2rem;
         }
-  
+ 
         .hospital-details {
             font-size: 0.9rem;
             color: #666;
-            margin-bottom: 18px;
+            margin-bottom: 15px;
         }
-  
+ 
         .view-hospital-btn {
             background-color: #ff9f43;
             color: white;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 5px;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             transition: all 0.3s ease;
             display: inline-block;
         }
-  
+ 
         .view-hospital-btn:hover {
             background-color: #e67e22;
-            transform: translateY(-3px);
         }
-  
+ 
         .empty-state {
             text-align: center;
-            padding: 50px;
+            padding: 30px;
             color: #777;
         }
-  
+ 
         .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 15px;
             color: #ddd;
         }
 
@@ -349,15 +330,13 @@
             margin-bottom: 15px;
             color: #ddd;
         }
-  
+ 
         footer {
             text-align: center;
-            padding: 25px;
+            padding: 20px;
             color: #777;
             font-size: 0.9rem;
             margin-top: 30px;
-            background-color: rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
         }
 
         /* Modal Styles */
@@ -403,7 +382,7 @@
         .modal-header {
             background: linear-gradient(135deg, #41b883 0%, #329268 100%);
             color: white;
-            padding: 25px 30px;
+            padding: 20px 30px;
             border-radius: 10px 10px 0 0;
             display: flex;
             justify-content: space-between;
@@ -432,7 +411,6 @@
 
         .close-modal:hover {
             background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg);
         }
 
         .modal-body {
@@ -490,7 +468,7 @@
         }
 
         .notification-list li, .pending-list li, .history-list li {
-            padding: 18px;
+            padding: 15px;
             margin-bottom: 12px;
             background-color: #f8f9fa;
             border-radius: 5px;
@@ -527,7 +505,6 @@
 
         .pay-btn:hover, .download-btn:hover, .location-btn:hover {
             background-color: #329268;
-            transform: translateY(-2px);
         }
 
         .location-btn {
@@ -564,7 +541,7 @@
   
         input, textarea {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
@@ -589,7 +566,7 @@
         }
   
         .btn {
-            padding: 14px 28px;
+            padding: 12px 20px;
             border: none;
             border-radius: 5px;
             font-size: 1rem;
@@ -609,9 +586,34 @@
   
         .update-btn:hover {
             background-color: #1d5f8a;
-            transform: translateY(-3px);
         }
   
+        /* Floating AI Button */
+        .floating-ai {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #41b883 0%, #329268 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: transform 0.2s ease;
+            text-decoration: none;
+        }
+
+        .floating-ai:hover {
+            transform: scale(1.1);
+        }
+ 
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -708,7 +710,7 @@
                     <div class="info-item">
                         <span class="info-label">Account Status</span>
                         <span class="info-value">
-                            <span class="status-indicator">
+                            <span class="status-indicator status-active">
                                 <i class="fas fa-circle"></i> Active
                             </span>
                         </span>
@@ -1082,6 +1084,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating AI Button -->
+    <a href="{{ url_for('patient_ai_chat') }}" class="floating-ai" title="Chat with AI Assistant - Harsh">
+        AI
+    </a>
 
     <script>
         // Calculate total notification count
